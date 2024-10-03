@@ -1,0 +1,295 @@
+---
+title: "LinearModelsEnvPred"
+format: html
+editor: visual
+---
+
+## Code set up
+
+First we set up the appropriate packages and references. File paths will be in reference to where the .qmd is saved
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+
+
+library(tidyverse)
+library(ggplot2)
+library(readr) # faster writing
+library(data.table) # faster writing of large files
+library(lubridate)
+library(mgcv)
+library(MuMIn)
+library(corrplot)
+library(car)
+
+
+source("Src/_00_yellowtail-header.r")
+source("Src/Functions-for-envir-index.r")
+```
+
+Next we set up the appropriate directories and read in the data.
+
+```{r}
+#| echo: false
+
+
+df = data.frame(read.csv("data-yellowtail/DATA_Combined_glorys_yellowtail.csv"), header = T)
+envir_data = df %>%  # drop terms not in model statement
+  dplyr::select(!any_of(c('year','sd','Y_rec','ZOOpjuv','ZOOben','DDegg')))
+#head(envir_data)
+#dim(envir_data)
+data_years = 1994:2014
+
+
+```
+We can build the functions including quadratic terms and omitting data that are missing years. We pull out DDegg just so we do not exceed the limit of 31 terms - pulling this out was somewhat arbitrary based on Amandas perliminary results.
+
+```{r}
+#| echo: false
+
+
+quadratic_terms = c('LSTlarv','ONIpre','ONIlarv', 'CutiSTIpjuv')
+
+form_dredge = make_dredge_equation(envir_data = envir_data, quadratic_vars = quadratic_terms)
+form_dredge
+data_1 = df %>% 
+  dplyr::select(!any_of( c('ZOOpjuv', 'ZOOben', 'DDegg')))  %>% 
+  filter(year %in% data_years)
+
+
+```
+
+Then we define the full model, making sure that correlated covariates are omitted. We can turn on/off the dredge function and read in the saved table instead for the sake of time when knitting the document
+```{r}
+#| echo: false
+
+
+fit = lm(form_dredge, data=data_1, na.action = na.fail)
+fit_dredge <- function(fit){
+  fit = fit
+  mtable = dredge(fit, rank = AICc, m.lim = c(NA,3),
+                  subset= # block correlated terms from the model
+                    !(CutiSTIpjuv && BeutiSTIpjuv) && 
+                    #!(DDben && ZOOben) && 
+                    !(DDlarv && DDpjuv) && 
+                    !(DDlarv && HCIlarv) && 
+                    !(DDlarv && ONIlarv) && 
+                    !(DDlarv && PDOlarv) && 
+                    !(DDlarv && Tpart) && 
+                    #!(DDlarv && ZOOpjuv) && 
+                    !(DDpjuv && HCIlarv) && 
+                    !(DDpjuv && HCIpjuv) && 
+                    !(DDpjuv && PDOlarv) && 
+                    !(DDpjuv && PDOpjuv) && 
+                    !(DDpjuv && Tpart) && 
+                    #!(DDpjuv && ZOOpjuv) && 
+                   # !(DDpre && DDegg) && 
+                    !(DDpre && DDlarv) && 
+                    !(DDpre && HCIlarv) &&
+                    !(DDpre && PDOlarv) && 
+                    !(DDpre && Tcop) && 
+                    !(DDpre && Tpart) && 
+                    #!(DDpre && ZOOpjuv) && 
+                    !(HCIlarv && PDOlarv) && 
+                    !(HCIpjuv && PDOpjuv) && 
+                    !(MLDpart && MLDlarv) && 
+                    !(ONIlarv && PDOlarv) && 
+                    !(ONIpre && ONIlarv) && 
+                    #!(PDOlarv && ZOOpjuv) && 
+                    !(Tpart && HCIlarv) && 
+                    !(Tpart && PDOlarv) && 
+                    #!(Tpart && ZOOpjuv) &&
+                    dc(LSTlarv, I(LSTlarv^2)) &&
+                    dc(ONIpre, I(ONIpre^2)) &&
+                    dc(ONIlarv, I(ONIlarv^2)) &&
+                    dc(CutiSTIpjuv, I(CutiSTIpjuv^2)),
+                  extra = list(R2 = function(x)
+                    summary(x)$r.squared[[1]], 
+                    F = function(y)
+                      summary(y)$fstatistic[[1]]),
+                  trace=2 )
+  
+  return(mtable)
+}
+#mtable = fit_dredge(fit)
+mtable<-readRDS('results-yellowtail/Table_dredge-model-fits.rds')
+mtable4 = subset(mtable, delta<4)
+print(subset(mtable, delta<2.75), abbrev.names = FALSE)
+```
+
+It is pretty clear from the results that there is a fair amount of evidence that there is a nonlinear relationship between the spring transition of the Coastal Upwelling Transport Index. While this is not the most parsimonuous model, it is in many of the most supported models so lets run some summary stats to try and evaluate the weight of evidence behind. Note: because STI is inherently in the spring (April ish) it naturally falls during the pelagic juvenile stage.
+
+First, lets look at the most parsimonious (fewest covariate terms) model:
+
+```{r}
+#| echo: false
+
+
+best_fit_pars = find_best_fit(mtable, fewest_params=TRUE)
+bf_mod_pars= bf_mod_equation(best_fit_pars)
+bf_mod_pars
+best_fit_pars = lm( bf_mod_pars, data=data_1)
+summary(best_fit_pars)
+df_index_par = predict_best_fit(old_data=data_1, new_data=df, bf_mod=bf_mod_pars)
+
+ggplot(df_index_par, aes(x=year, y=fit)) + 
+  geom_ribbon(data=df_index_par, aes(ymin = fit-1.96*se, ymax = fit+1.96*se), 
+              color='grey', alpha = 0.05) + 
+  geom_line() + 
+  ggtitle("MLDlar")+
+  xlab("Year") + ylab('ln (rec devs)') + 
+  geom_point(aes(year,Y_rec)) + 
+  scale_x_continuous(breaks=seq(1995,2025,5) , minor_breaks = 1993:max(df$year)) + 
+  annotate(geom='segment', x=1993, xend=max(df_index_par$year), y=0, linetype='dotted') +
+  theme_bw()
+
+```
+
+The best model include Mixed Layer Depth during the larval stage. But this model does not fit the data very well for half the time series. the R^2 is only  0.20 and when we actually plot the results the model does not fit the time series of recruitment deviations very well between 2005 and 2014. This does not bode well at all for prediction and also indicates that if we used any other type of model selection criteria that has temporally structured cross-validation (such as Leave Future out CV) this model would not have very much support. RSE is pretty good (0.4) but that is really driven by well fit observations early in the TS.
+
+We can see that the CUTI STI has a lot of support when considered as a non-linear relationship with a quadratic term. Lets look at it closer:
+
+```{r}
+#| echo: false
+
+
+best_fit = find_best_fit(mtable, fewest_params=FALSE)
+bf_mod= bf_mod_equation(best_fit)
+bf_mod
+best_fit = lm( bf_mod, data=data_1)
+summary(best_fit)
+
+df_index = predict_best_fit(old_data=data_1, new_data=df, bf_mod=bf_mod)
+
+ggplot(df_index, aes(x=year, y=fit)) + 
+  geom_ribbon(data=df_index, aes(ymin = fit-1.96*se, ymax = fit+1.96*se), 
+              color='grey', alpha = 0.05) + 
+  geom_line() + 
+  ggtitle("CutiSTIpjuv + I(CutiSTIpjuv^2)")+
+  xlab("Year") + ylab('ln (rec devs)') + 
+  geom_point(aes(year,Y_rec)) + 
+  scale_x_continuous(breaks=seq(1995,2025,5) , minor_breaks = 1993:max(df$year)) + 
+  annotate(geom='segment', x=1993, xend=max(df_index$year), y=0, linetype='dotted') +
+  theme_bw()
+
+CutiSTIpjuvPRED<-data.frame(CutiSTIpjuv=seq(-2,2,0.1))
+mod_bf<- lm(Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2), data_1)
+df_index = data.frame(y_rec_pred=predict(mod_bf,newdata =CutiSTIpjuvPRED, interval = 'confidence'), CutiSTIpjuvPRED)
+
+ggplot(df_index, aes(x=CutiSTIpjuv, y=y_rec_pred.fit)) + 
+  geom_ribbon(data=df_index, aes(ymin = y_rec_pred.lwr, ymax =y_rec_pred.upr), 
+              color='grey', alpha = 0.05) + 
+  geom_line() + 
+  ggtitle("CutiSTIpjuv + I(CutiSTIpjuv^2)")+
+  xlab("CutiSTI") + ylab('ln (rec devs)') + 
+  geom_point() + 
+  theme_bw()
+```
+
+Our R^2 is much higher, 0.37 and our RMSE is 0.39, pretty close to the MLD_[larv]. If we look at the fit, it fits the time series more consistently through time which indicates that it should be less sensitive to our model selection procedure than MLD_[larv] would be. 
+
+Okay - so now lets quantify our weight of evidence behind the CUTI STI variable. In an ideal world I would use marginal improvement in RMSE for each predictor, but that is difficult to calculate over so many models, so instead I will try and parse down what I test in the GAM and LFO-CV (also very slow) by looking at the total AIC weight for each predictor instead. This takes some rearranging of the dredge output(ugh) as follows: 
+
+
+```{r}
+#| echo: false
+mtable2<-mtable
+sum(mtable$weight)
+mtable2[is.na(mtable2)] <- 0
+param_names<-colnames(mtable2)[31:2]
+AICcTab=NA
+for(i in 2:31){
+  AICweight =NA
+  for(j in 1:nrow(mtable2)){
+  AICweight = rbind(AICweight,ifelse(mtable2[j,i]!= 0, mtable2[j,38],0))
+  }
+  AICcTab=cbind(AICweight,AICcTab)
+}
+
+
+AICSum<-AICcTab[2:nrow(AICcTab),1:30]
+colnames(AICSum)<-param_names
+
+AICSum2<-data.frame(colSums(AICSum))
+AICsummary<-data.frame(Predictor=param_names,AICWeight=round(AICSum2[,1],3))
+print(AICsummary)
+
+```
+
+
+It is also worth noting that the correlation coefficient for both of these is only 0.11. This made me really interested to see what the fit of the model with all three covariates was, which was also included in the top 5 models with delta AIC_c less than 2. So lets look at what that fit looks like: 
+
+```{r}
+#| echo: false
+best_fit2 = lm(Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2)+MLDlarv, data=data_1)
+summary(best_fit2)
+df_index = predict_best_fit(old_data=data_1, new_data=df, bf_mod=best_fit2)
+
+ggplot(df_index, aes(x=year, y=fit)) + 
+  geom_ribbon(data=df_index, aes(ymin = fit-1.96*se, ymax = fit+1.96*se), 
+              color='grey', alpha = 0.05) + 
+  geom_line() + 
+  ggtitle("CutiSTIpjuv + I(CutiSTIpjuv^2) + MLDlarv")+
+  xlab("Year") + ylab('ln (rec devs)') + 
+  geom_point(aes(year,Y_rec)) + 
+  scale_x_continuous(breaks=seq(1995,2025,5) , minor_breaks = 1993:max(df$year)) + 
+  annotate(geom='segment', x=1993, xend=max(df_index$year), y=0, linetype='dotted') +
+  theme_bw()
+
+```
+
+Helpful to see, but it does not really improve the fit of the model that much and MLDlarv is not significant. The last thing I am curious to take a peek at is how correlated some of the most meaningful predictors are. We can do this two ways 1) what is in the tope models (del AIC<2) or look at the one that have AIC total weight of ten or higher. A handful pop out as meeting both of those criteria: CUTI STI, CUTI STI^2, MLDlarv, ONIpjuv, Tcop. Overall, for top predictors CUTI STI is and DDben/ONIpjuv seem to be capturing uniqe variation not captured by the other variables but the correlation across the other well supported predictors seem to be capturing the same flavor of variability (correlation of 0.4 or higher across 3+ covariates)
+
+```{r}
+#| echo: false
+subset(mtable, delta<2.5)
+
+AICsummary[order(-AICsummary$AICWeight),]
+preds<-  AICsummary%>%filter(AICWeight>0.090)
+
+top_pred<- envir_data%>%select(Tcop,ONIpjuv,ONIlarv,MLDpart,MLDlarv,LSTlarv,DDben,CutiSTIpjuv)
+top_pred <- top_pred[complete.cases(top_pred), ]
+M = cor(top_pred)
+corrplot.mixed(M, order = 'AOE')
+
+
+
+```
+
+I thought I was done exploring but now I want to look at one last model...there seems to be 3 patterns of environmental varibility that are somewhat unique: variation captured by MLDlar, ONIpjuv (and DDben), and finally, CUTI STI. So lets try looking at the full model that represents each of these 3 axes...  
+
+```{r}
+#| echo: false
+best_fit3 = lm(Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2)+MLDlarv+ONIpjuv, data=data_1)
+summary(best_fit3)
+df_index = predict_best_fit(old_data=data_1, new_data=df, bf_mod=best_fit3)
+
+ggplot(df_index, aes(x=year, y=fit)) + 
+  geom_ribbon(data=df_index, aes(ymin = fit-1.96*se, ymax = fit+1.96*se), 
+              color='grey', alpha = 0.05) + 
+  geom_line() + 
+  ggtitle("CutiSTIpjuv + I(CutiSTIpjuv^2) + MLDlarv")+
+  xlab("Year") + ylab('ln (rec devs)') + 
+  geom_point(aes(year,Y_rec)) + 
+  scale_x_continuous(breaks=seq(1995,2025,5) , minor_breaks = 1993:max(df$year)) + 
+  annotate(geom='segment', x=1993, xend=max(df_index$year), y=0, linetype='dotted') +
+  theme_bw()
+
+
+vif(best_fit3)
+```
+...this result is interesting. We get an R^2 of of 0.43. We don't need to be extra concerned about multicollinearity, all of the variance inflation factors are well below 2 but probably worth noting that some of the covariates are not significant from a frequentist perspective BUT the interesting part of this model is that we do see improved fit.
+
+
+Now, from an assessment stand point this is all incredibly helpful for knowing what to look at but is not out end all be all model. My thought process moving forward is to apply some of Kristen's hake code to:
+
+1) look at GAMs which will have less of a penalty for the addition of a non-linear relationship with CUTI STI compared to other models. It will also give us a bit more flexibility in the shape of the non-linear relationship which may help the model fit better and / or improve predictive capacity. 
+
+2) Use LFO-CV and perform a similar comparison with the CV as AIC and use the marginal improvement in RMSE for each predictor
+
+This will help use approach what is the best predictor from multiple angles. 
+
+And all of this is to say with the very big caveat that when we eventually have recruitment deviations through 2021ish we may get completely different results. 
