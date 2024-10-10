@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.553">
+<meta name="generator" content="quarto-1.3.450">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -19,6 +19,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -58,9 +92,7 @@ ul.task-list li input[type="checkbox"] {
   </div>
   
 
-
 </header>
-
 
 <section id="code-set-up" class="level2">
 <h2 class="anchored" data-anchor-id="code-set-up">Code set up</h2>
@@ -75,7 +107,7 @@ ul.task-list li input[type="checkbox"] {
     PDOpjuv + LUSI + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv + 
     BeutiSTIpjuv + header + I(LSTlarv^2) + I(ONIpre^2) + I(ONIlarv^2) + 
     I(CutiSTIpjuv^2)
-&lt;environment: 0x11be49f68&gt;</code></pre>
+&lt;environment: 0x14256f028&gt;</code></pre>
 </div>
 </div>
 <p>Then we define the full model, making sure that correlated covariates are omitted. We can turn on/off the dredge function and read in the saved table instead for the sake of time when knitting the document</p>
@@ -86,45 +118,45 @@ ul.task-list li input[type="checkbox"] {
 Model selection table 
           (Intercept) CutiSTIpjuv I(CutiSTIpjuv^2)    DDlarv     DDpre HCIlarv
 49             0.2215     -0.2185          -0.3035                            
-268435505     -2.0230     -0.2346          -0.2819                            
-262145        -1.9780                                                         
+134217777     -2.0230     -0.2346          -0.2819                            
+131073        -1.9780                                                         
 2097          -1.0680     -0.2294          -0.2693           3.814e-05        
-262193        -0.8855     -0.1973          -0.2420                            
+131121        -0.8855     -0.1973          -0.2420                            
 4145           0.3772     -0.2616          -0.2826                     -0.3156
 561           -0.5241     -0.2469          -0.2774 2.583e-05                  
-8388657        0.1913     -0.2061          -0.2913                            
-67108913       0.1735     -0.2517          -0.2771                            
-536870961     -0.9949     -0.2475          -0.2795                            
-1048625       -4.1850     -0.2527          -0.3313                            
-524337        -0.4035     -0.2045          -0.2592                            
+4194353        0.1913     -0.2061          -0.2913                            
+33554481       0.1735     -0.2517          -0.2771                            
+268435505     -0.9949     -0.2475          -0.2795                            
+524337        -4.1850     -0.2527          -0.3313                            
+262193        -0.4035     -0.2045          -0.2592                            
 65585          0.9017     -0.2393          -0.3277                            
           LSTpjuv MLDlarv MLDpart MLDpjuv ONIpjuv PDOlarv   Tcop  Tpart     R2
 49                                                                      0.3663
-268435505                                                 0.2067        0.4363
-262145            0.16020                                               0.2052
+134217777                                                 0.2067        0.4363
+131073            0.16020                                               0.2052
 2097                                                                    0.4162
-262193            0.08712                                               0.4135
+131121            0.08712                                               0.4135
 4145                                                                    0.4108
 561                                                                     0.4079
-8388657                                   -0.1917                       0.4074
-67108913                                            0.111               0.4023
-536870961                                                        0.1211 0.3985
-1048625                            0.4028                               0.3957
-524337                    0.03991                                       0.3943
+4194353                                   -0.1917                       0.4074
+33554481                                            0.111               0.4023
+268435505                                                        0.1211 0.3985
+524337                             0.4028                               0.3957
+262193                    0.03991                                       0.3943
 65585       5.841                                                       0.3928
               F df  logLik AICc delta weight
 49        5.203  4  -8.309 27.1  0.00  0.186
-268435505 4.387  5  -7.080 28.2  1.04  0.111
-262145    4.906  3 -10.688 28.8  1.67  0.081
+134217777 4.387  5  -7.080 28.2  1.04  0.111
+131073    4.906  3 -10.688 28.8  1.67  0.081
 2097      4.040  5  -7.448 28.9  1.78  0.077
-262193    3.996  5  -7.496 29.0  1.87  0.073
+131121    3.996  5  -7.496 29.0  1.87  0.073
 4145      3.950  5  -7.546 29.1  1.97  0.069
 561       3.904  5  -7.597 29.2  2.07  0.066
-8388657   3.895  5  -7.606 29.2  2.09  0.065
-67108913  3.814  5  -7.696 29.4  2.27  0.060
-536870961 3.755  5  -7.762 29.5  2.40  0.056
-1048625   3.711  5  -7.811 29.6  2.50  0.053
-524337    3.690  5  -7.834 29.7  2.55  0.052
+4194353   3.895  5  -7.606 29.2  2.09  0.065
+33554481  3.814  5  -7.696 29.4  2.27  0.060
+268435505 3.755  5  -7.762 29.5  2.40  0.056
+524337    3.711  5  -7.811 29.6  2.50  0.053
+262193    3.690  5  -7.834 29.7  2.55  0.052
 65585     3.665  5  -7.862 29.7  2.61  0.051
 Models ranked by AICc(x) </code></pre>
 </div>
@@ -134,7 +166,7 @@ Models ranked by AICc(x) </code></pre>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>Y_rec ~ MLDlarv
-&lt;environment: 0x107970048&gt;</code></pre>
+&lt;environment: 0x144b4f238&gt;</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -165,11 +197,7 @@ F-statistic: 4.906 on 1 and 19 DF,  p-value: 0.03918</code></pre>
 (`geom_point()`).</code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>The best model include Mixed Layer Depth during the larval stage. But this model does not fit the data very well for half the time series. the R^2 is only 0.20 and when we actually plot the results the model does not fit the time series of recruitment deviations very well between 2005 and 2014. This does not bode well at all for prediction and also indicates that if we used any other type of model selection criteria that has temporally structured cross-validation (such as Leave Future out CV) this model would not have very much support. RSE is pretty good (0.4) but that is really driven by well fit observations early in the TS.</p>
@@ -177,7 +205,7 @@ F-statistic: 4.906 on 1 and 19 DF,  p-value: 0.03918</code></pre>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2)
-&lt;environment: 0x12fcfde78&gt;</code></pre>
+&lt;environment: 0x142749430&gt;</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -209,18 +237,10 @@ F-statistic: 5.203 on 2 and 18 DF,  p-value: 0.01647</code></pre>
 (`geom_point()`).</code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>Our R^2 is much higher, 0.37 and our RMSE is 0.39, pretty close to the MLD_[larv]. If we look at the fit, it fits the time series more consistently through time which indicates that it should be less sensitive to our model selection procedure than MLD_[larv] would be.</p>
@@ -231,36 +251,36 @@ F-statistic: 5.203 on 2 and 18 DF,  p-value: 0.01647</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          Predictor AICWeight
-1             Tpart     0.062
-2              Tcop     0.092
-3           PDOpjuv     0.085
-4           PDOlarv     0.064
-5       I(ONIpre^2)     0.010
-6            ONIpre     0.090
-7           ONIpjuv     0.117
-8      I(ONIlarv^2)     0.036
-9           ONIlarv     0.101
-10          MLDpjuv     0.078
-11          MLDpart     0.144
-12          MLDlarv     0.245
-13             LUSI     0.061
-14          LSTpjuv     0.058
-15     I(LSTlarv^2)     0.030
-16          LSTlarv     0.098
-17          HCIpjuv     0.056
-18          HCIlarv     0.069
-19            DDpre     0.083
-20           DDpjuv     0.048
-21           DDlarv     0.063
-22            DDegg     0.070
-23            DDben     0.097
-24     CutiTUMIpjuv     0.056
-25 I(CutiSTIpjuv^2)     0.185
-26      CutiSTIpjuv     0.286
-27          CSTpjuv     0.056
-28          CSTlarv     0.060
-29    BeutiTUMIpjuv     0.069
-30     BeutiSTIpjuv     0.061</code></pre>
+1                R2     0.996
+2             Tpart     0.063
+3              Tcop     0.094
+4           PDOpjuv     0.087
+5           PDOlarv     0.065
+6       I(ONIpre^2)     0.011
+7            ONIpre     0.092
+8           ONIpjuv     0.119
+9      I(ONIlarv^2)     0.037
+10          ONIlarv     0.104
+11          MLDpjuv     0.080
+12          MLDpart     0.145
+13          MLDlarv     0.245
+14          LSTpjuv     0.060
+15     I(LSTlarv^2)     0.031
+16          LSTlarv     0.100
+17          HCIpjuv     0.058
+18          HCIlarv     0.070
+19            DDpre     0.084
+20           DDpjuv     0.049
+21           DDlarv     0.064
+22            DDegg     0.071
+23            DDben     0.099
+24     CutiTUMIpjuv     0.057
+25 I(CutiSTIpjuv^2)     0.192
+26      CutiSTIpjuv     0.294
+27          CSTpjuv     0.057
+28          CSTlarv     0.062
+29    BeutiTUMIpjuv     0.070
+30     BeutiSTIpjuv     0.062</code></pre>
 </div>
 </div>
 <p>It is also worth noting that the correlation coefficient for both of these is only 0.11. This made me really interested to see what the fit of the model with all three covariates was, which was also included in the top 5 models with delta AIC_c less than 2. So lets look at what that fit looks like:</p>
@@ -297,11 +317,7 @@ F-statistic: 3.996 on 3 and 17 DF,  p-value: 0.02532</code></pre>
 (`geom_point()`).</code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>Helpful to see, but it does not really improve the fit of the model that much and MLDlarv is not significant. The last thing I am curious to take a peek at is how correlated some of the most meaningful predictors are. We can do this two ways 1) what is in the tope models (del AIC&lt;2) or look at the one that have AIC total weight of ten or higher. A handful pop out as meeting both of those criteria: CUTI STI, CUTI STI^2, MLDlarv, ONIpjuv, Tcop. Overall, for top predictors CUTI STI is and DDben/ONIpjuv seem to be capturing uniqe variation not captured by the other variables but the correlation across the other well supported predictors seem to be capturing the same flavor of variability (correlation of 0.4 or higher across 3+ covariates)</p>
@@ -312,67 +328,63 @@ F-statistic: 3.996 on 3 and 17 DF,  p-value: 0.02532</code></pre>
 Model selection table 
           (Intrc)   CtSTI CtSTI^2     DDlrv     DDpre   HCIlr   MLDlr   ONIpj
 49         0.2215 -0.2185 -0.3035                                            
-268435505 -2.0230 -0.2346 -0.2819                                            
-262145    -1.9780                                             0.16020        
+134217777 -2.0230 -0.2346 -0.2819                                            
+131073    -1.9780                                             0.16020        
 2097      -1.0680 -0.2294 -0.2693           3.814e-05                        
-262193    -0.8855 -0.1973 -0.2420                             0.08712        
+131121    -0.8855 -0.1973 -0.2420                             0.08712        
 4145       0.3772 -0.2616 -0.2826                     -0.3156                
 561       -0.5241 -0.2469 -0.2774 2.583e-05                                  
-8388657    0.1913 -0.2061 -0.2913                                     -0.1917
-67108913   0.1735 -0.2517 -0.2771                                            
-536870961 -0.9949 -0.2475 -0.2795                                            
+4194353    0.1913 -0.2061 -0.2913                                     -0.1917
+33554481   0.1735 -0.2517 -0.2771                                            
+268435505 -0.9949 -0.2475 -0.2795                                            
           PDOlr   Tcop  Tpart     R2     F df  logLik AICc delta weight
 49                            0.3663 5.203  4  -8.309 27.1  0.00  0.221
-268435505       0.2067        0.4363 4.387  5  -7.080 28.2  1.04  0.131
-262145                        0.2052 4.906  3 -10.688 28.8  1.67  0.096
+134217777       0.2067        0.4363 4.387  5  -7.080 28.2  1.04  0.131
+131073                        0.2052 4.906  3 -10.688 28.8  1.67  0.096
 2097                          0.4162 4.040  5  -7.448 28.9  1.78  0.091
-262193                        0.4135 3.996  5  -7.496 29.0  1.87  0.086
+131121                        0.4135 3.996  5  -7.496 29.0  1.87  0.086
 4145                          0.4108 3.950  5  -7.546 29.1  1.97  0.082
 561                           0.4079 3.904  5  -7.597 29.2  2.07  0.078
-8388657                       0.4074 3.895  5  -7.606 29.2  2.09  0.077
-67108913  0.111               0.4023 3.814  5  -7.696 29.4  2.27  0.071
-536870961              0.1211 0.3985 3.755  5  -7.762 29.5  2.40  0.066
+4194353                       0.4074 3.895  5  -7.606 29.2  2.09  0.077
+33554481  0.111               0.4023 3.814  5  -7.696 29.4  2.27  0.071
+268435505              0.1211 0.3985 3.755  5  -7.762 29.5  2.40  0.066
 Models ranked by AICc(x) </code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          Predictor AICWeight
-26      CutiSTIpjuv     0.286
-12          MLDlarv     0.245
-25 I(CutiSTIpjuv^2)     0.185
-11          MLDpart     0.144
-7           ONIpjuv     0.117
-9           ONIlarv     0.101
-16          LSTlarv     0.098
-23            DDben     0.097
-2              Tcop     0.092
-6            ONIpre     0.090
-3           PDOpjuv     0.085
-19            DDpre     0.083
-10          MLDpjuv     0.078
-22            DDegg     0.070
-18          HCIlarv     0.069
-29    BeutiTUMIpjuv     0.069
-4           PDOlarv     0.064
-21           DDlarv     0.063
-1             Tpart     0.062
-13             LUSI     0.061
-30     BeutiSTIpjuv     0.061
-28          CSTlarv     0.060
-14          LSTpjuv     0.058
-17          HCIpjuv     0.056
-24     CutiTUMIpjuv     0.056
-27          CSTpjuv     0.056
-20           DDpjuv     0.048
-8      I(ONIlarv^2)     0.036
-15     I(LSTlarv^2)     0.030
-5       I(ONIpre^2)     0.010</code></pre>
+1                R2     0.996
+26      CutiSTIpjuv     0.294
+13          MLDlarv     0.245
+25 I(CutiSTIpjuv^2)     0.192
+12          MLDpart     0.145
+8           ONIpjuv     0.119
+10          ONIlarv     0.104
+16          LSTlarv     0.100
+23            DDben     0.099
+3              Tcop     0.094
+7            ONIpre     0.092
+4           PDOpjuv     0.087
+19            DDpre     0.084
+11          MLDpjuv     0.080
+22            DDegg     0.071
+18          HCIlarv     0.070
+29    BeutiTUMIpjuv     0.070
+5           PDOlarv     0.065
+21           DDlarv     0.064
+2             Tpart     0.063
+28          CSTlarv     0.062
+30     BeutiSTIpjuv     0.062
+14          LSTpjuv     0.060
+17          HCIpjuv     0.058
+24     CutiTUMIpjuv     0.057
+27          CSTpjuv     0.057
+20           DDpjuv     0.049
+9      I(ONIlarv^2)     0.037
+15     I(LSTlarv^2)     0.031
+6       I(ONIpre^2)     0.011</code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>I thought I was done exploring but now I want to look at one last model…there seems to be 3 patterns of environmental varibility that are somewhat unique: variation captured by MLDlar, ONIpjuv (and DDben), and finally, CUTI STI. So lets try looking at the full model that represents each of these 3 axes…</p>
@@ -410,11 +422,7 @@ F-statistic: 3.014 on 4 and 16 DF,  p-value: 0.04967</code></pre>
 (`geom_point()`).</code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     CutiSTIpjuv I(CutiSTIpjuv^2)          MLDlarv          ONIpjuv 
@@ -422,6 +430,13 @@ F-statistic: 3.014 on 4 and 16 DF,  p-value: 0.04967</code></pre>
 </div>
 </div>
 <p>…this result is interesting. We get an R^2 of of 0.43. We don’t need to be extra concerned about multicollinearity, all of the variance inflation factors are well below 2 but probably worth noting that some of the covariates are not significant from a frequentist perspective BUT the interesting part of this model is that we do see improved fit.</p>
+<p>I am interested in looking at the patterns of variability from a different lens so I am going to apply some dimension reduction techniques:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>arranged</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
 <p>Now, from an assessment stand point this is all incredibly helpful for knowing what to look at but is not out end all be all model. My thought process moving forward is to apply some of Kristen’s hake code to:</p>
 <ol type="1">
 <li><p>look at GAMs which will have less of a penalty for the addition of a non-linear relationship with CUTI STI compared to other models. It will also give us a bit more flexibility in the shape of the non-linear relationship which may help the model fit better and / or improve predictive capacity.</p></li>
@@ -512,27 +527,10 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     // clear code selection
     e.clearSelection();
   });
-    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-    var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp('/' + window.location.host + '/');
-    var isInternal = (href) => {
-        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-    }
-    // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
-    for (var i=0; i<links.length; i++) {
-      const link = links[i];
-      if (!isInternal(link.href)) {
-        // undo the damage that might have been done by quarto-nav.js in the case of
-        // links that we want to consider external
-        if (link.dataset.originalHref !== undefined) {
-          link.href = link.dataset.originalHref;
-        }
-      }
-    }
-  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+  function tippyHover(el, contentFn) {
     const config = {
       allowHTML: true,
+      content: contentFn,
       maxWidth: 500,
       delay: 100,
       arrow: false,
@@ -542,17 +540,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       interactive: true,
       interactiveBorder: 10,
       theme: 'quarto',
-      placement: 'bottom-start',
+      placement: 'bottom-start'
     };
-    if (contentFn) {
-      config.content = contentFn;
-    }
-    if (onTriggerFn) {
-      config.onTrigger = onTriggerFn;
-    }
-    if (onUntriggerFn) {
-      config.onUntrigger = onUntriggerFn;
-    }
     window.tippy(el, config); 
   }
   const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
@@ -564,130 +553,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      if (note) {
-        return note.innerHTML;
-      } else {
-        return "";
-      }
-    });
-  }
-  const xrefs = window.document.querySelectorAll('a.quarto-xref');
-  const processXRef = (id, note) => {
-    // Strip column container classes
-    const stripColumnClz = (el) => {
-      el.classList.remove("page-full", "page-columns");
-      if (el.children) {
-        for (const child of el.children) {
-          stripColumnClz(child);
-        }
-      }
-    }
-    stripColumnClz(note)
-    if (id === null || id.startsWith('sec-')) {
-      // Special case sections, only their first couple elements
-      const container = document.createElement("div");
-      if (note.children && note.children.length > 2) {
-        container.appendChild(note.children[0].cloneNode(true));
-        for (let i = 1; i < note.children.length; i++) {
-          const child = note.children[i];
-          if (child.tagName === "P" && child.innerText === "") {
-            continue;
-          } else {
-            container.appendChild(child.cloneNode(true));
-            break;
-          }
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(container);
-        }
-        return container.innerHTML
-      } else {
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        return note.innerHTML;
-      }
-    } else {
-      // Remove any anchor links if they are present
-      const anchorLink = note.querySelector('a.anchorjs-link');
-      if (anchorLink) {
-        anchorLink.remove();
-      }
-      if (window.Quarto?.typesetMath) {
-        window.Quarto.typesetMath(note);
-      }
-      // TODO in 1.5, we should make sure this works without a callout special case
-      if (note.classList.contains("callout")) {
-        return note.outerHTML;
-      } else {
-        return note.innerHTML;
-      }
-    }
-  }
-  for (var i=0; i<xrefs.length; i++) {
-    const xref = xrefs[i];
-    tippyHover(xref, undefined, function(instance) {
-      instance.disable();
-      let url = xref.getAttribute('href');
-      let hash = undefined; 
-      if (url.startsWith('#')) {
-        hash = url;
-      } else {
-        try { hash = new URL(url).hash; } catch {}
-      }
-      if (hash) {
-        const id = hash.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note !== null) {
-          try {
-            const html = processXRef(id, note.cloneNode(true));
-            instance.setContent(html);
-          } finally {
-            instance.enable();
-            instance.show();
-          }
-        } else {
-          // See if we can fetch this
-          fetch(url.split('#')[0])
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.getElementById(id);
-            if (note !== null) {
-              const html = processXRef(id, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      } else {
-        // See if we can fetch a full url (with no hash to target)
-        // This is a special case and we should probably do some content thinning / targeting
-        fetch(url)
-        .then(res => res.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const htmlDoc = parser.parseFromString(html, "text/html");
-          const note = htmlDoc.querySelector('main.content');
-          if (note !== null) {
-            // This should only happen for chapter cross references
-            // (since there is no id in the URL)
-            // remove the first header
-            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-              note.children[0].remove();
-            }
-            const html = processXRef(null, note);
-            instance.setContent(html);
-          } 
-        }).finally(() => {
-          instance.enable();
-          instance.show();
-        });
-      }
-    }, function(instance) {
+      return note.innerHTML;
     });
   }
       let selectedAnnoteEl;
@@ -731,7 +597,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             }
             div.style.top = top - 2 + "px";
             div.style.height = height + 4 + "px";
-            div.style.left = 0;
             let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
             if (gutterDiv === null) {
               gutterDiv = window.document.createElement("div");
@@ -757,32 +622,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         });
         selectedAnnoteEl = undefined;
       };
-        // Handle positioning of the toggle
-    window.addEventListener(
-      "resize",
-      throttle(() => {
-        elRect = undefined;
-        if (selectedAnnoteEl) {
-          selectCodeLines(selectedAnnoteEl);
-        }
-      }, 10)
-    );
-    function throttle(fn, ms) {
-    let throttle = false;
-    let timer;
-      return (...args) => {
-        if(!throttle) { // first call gets through
-            fn.apply(this, args);
-            throttle = true;
-        } else { // all the others get throttled
-            if(timer) clearTimeout(timer); // cancel #2
-            timer = setTimeout(() => {
-              fn.apply(this, args);
-              timer = throttle = false;
-            }, ms);
-        }
-      };
-    }
       // Attach click handler to the DT
       const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
       for (const annoteDlNode of annoteDls) {
@@ -843,7 +682,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-
 
 
 

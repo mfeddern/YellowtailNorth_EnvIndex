@@ -6,7 +6,7 @@ library(lubridate)
 library(mgcv)
 library(MuMIn)
 
-source("_00_yellowtail-header.r")
+source("Src/_00_yellowtail-header.r")
 source("Src/Functions-for-envir-index.r")
 # set directories ##############################################################
 
@@ -16,7 +16,9 @@ df = data.frame(read.csv(paste0(data_dir,"DATA_Combined_glorys_yellowtail.csv"),
 
 # get predictors to create model formula #######################################
 envir_data = df %>%  # drop terms not in model statement
-  dplyr::select(!any_of(c('year','sd','Y_rec','ZOOpjuv','ZOOben')))
+  dplyr::select(!any_of(c('year','sd','Y_rec','ZOOpjuv','ZOOben')))%>%  # drop terms not in model statement
+    dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI')))%>% 
+    mutate_all(~ scale(.))
 head(envir_data)
 dim(envir_data)
 data_years = 1994:2014

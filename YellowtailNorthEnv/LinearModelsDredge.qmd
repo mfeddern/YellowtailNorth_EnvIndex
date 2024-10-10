@@ -14,7 +14,7 @@ First we set up the appropriate packages and references. File paths will be in r
 #| message: false
 
 
-
+library(bayesdfa)
 library(tidyverse)
 library(ggplot2)
 library(readr) # faster writing
@@ -24,6 +24,7 @@ library(mgcv)
 library(MuMIn)
 library(corrplot)
 library(car)
+library(ggpubr)
 
 
 source("Src/_00_yellowtail-header.r")
@@ -45,6 +46,7 @@ data_years = 1994:2014
 
 
 ```
+
 We can build the functions including quadratic terms and omitting data that are missing years. We pull out DDegg just so we do not exceed the limit of 31 terms - pulling this out was somewhat arbitrary based on Amandas perliminary results.
 
 ```{r}
@@ -63,6 +65,7 @@ data_1 = df %>%
 ```
 
 Then we define the full model, making sure that correlated covariates are omitted. We can turn on/off the dredge function and read in the saved table instead for the sake of time when knitting the document
+
 ```{r}
 #| echo: false
 
@@ -148,7 +151,7 @@ ggplot(df_index_par, aes(x=year, y=fit)) +
 
 ```
 
-The best model include Mixed Layer Depth during the larval stage. But this model does not fit the data very well for half the time series. the R^2 is only  0.20 and when we actually plot the results the model does not fit the time series of recruitment deviations very well between 2005 and 2014. This does not bode well at all for prediction and also indicates that if we used any other type of model selection criteria that has temporally structured cross-validation (such as Leave Future out CV) this model would not have very much support. RSE is pretty good (0.4) but that is really driven by well fit observations early in the TS.
+The best model include Mixed Layer Depth during the larval stage. But this model does not fit the data very well for half the time series. the R\^2 is only 0.20 and when we actually plot the results the model does not fit the time series of recruitment deviations very well between 2005 and 2014. This does not bode well at all for prediction and also indicates that if we used any other type of model selection criteria that has temporally structured cross-validation (such as Leave Future out CV) this model would not have very much support. RSE is pretty good (0.4) but that is really driven by well fit observations early in the TS.
 
 We can see that the CUTI STI has a lot of support when considered as a non-linear relationship with a quadratic term. Lets look at it closer:
 
@@ -189,10 +192,9 @@ ggplot(df_index, aes(x=CutiSTIpjuv, y=y_rec_pred.fit)) +
   theme_bw()
 ```
 
-Our R^2 is much higher, 0.37 and our RMSE is 0.39, pretty close to the MLD_[larv]. If we look at the fit, it fits the time series more consistently through time which indicates that it should be less sensitive to our model selection procedure than MLD_[larv] would be. 
+Our R\^2 is much higher, 0.37 and our RMSE is 0.39, pretty close to the MLD\_\[larv\]. If we look at the fit, it fits the time series more consistently through time which indicates that it should be less sensitive to our model selection procedure than MLD\_\[larv\] would be.
 
-Okay - so now lets quantify our weight of evidence behind the CUTI STI variable. In an ideal world I would use marginal improvement in RMSE for each predictor, but that is difficult to calculate over so many models, so instead I will try and parse down what I test in the GAM and LFO-CV (also very slow) by looking at the total AIC weight for each predictor instead. This takes some rearranging of the dredge output(ugh) as follows: 
-
+Okay - so now lets quantify our weight of evidence behind the CUTI STI variable. In an ideal world I would use marginal improvement in RMSE for each predictor, but that is difficult to calculate over so many models, so instead I will try and parse down what I test in the GAM and LFO-CV (also very slow) by looking at the total AIC weight for each predictor instead. This takes some rearranging of the dredge output(ugh) as follows:
 
 ```{r}
 #| echo: false
@@ -204,7 +206,7 @@ AICcTab=NA
 for(i in 2:31){
   AICweight =NA
   for(j in 1:nrow(mtable2)){
-  AICweight = rbind(AICweight,ifelse(mtable2[j,i]!= 0, mtable2[j,38],0))
+  AICweight = rbind(AICweight,ifelse(mtable2[j,i]!= 0, mtable2[j,37],0))
   }
   AICcTab=cbind(AICweight,AICcTab)
 }
@@ -219,8 +221,7 @@ print(AICsummary)
 
 ```
 
-
-It is also worth noting that the correlation coefficient for both of these is only 0.11. This made me really interested to see what the fit of the model with all three covariates was, which was also included in the top 5 models with delta AIC_c less than 2. So lets look at what that fit looks like: 
+It is also worth noting that the correlation coefficient for both of these is only 0.11. This made me really interested to see what the fit of the model with all three covariates was, which was also included in the top 5 models with delta AIC_c less than 2. So lets look at what that fit looks like:
 
 ```{r}
 #| echo: false
@@ -241,7 +242,7 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 ```
 
-Helpful to see, but it does not really improve the fit of the model that much and MLDlarv is not significant. The last thing I am curious to take a peek at is how correlated some of the most meaningful predictors are. We can do this two ways 1) what is in the tope models (del AIC<2) or look at the one that have AIC total weight of ten or higher. A handful pop out as meeting both of those criteria: CUTI STI, CUTI STI^2, MLDlarv, ONIpjuv, Tcop. Overall, for top predictors CUTI STI is and DDben/ONIpjuv seem to be capturing uniqe variation not captured by the other variables but the correlation across the other well supported predictors seem to be capturing the same flavor of variability (correlation of 0.4 or higher across 3+ covariates)
+Helpful to see, but it does not really improve the fit of the model that much and MLDlarv is not significant. The last thing I am curious to take a peek at is how correlated some of the most meaningful predictors are. We can do this two ways 1) what is in the tope models (del AIC\<2) or look at the one that have AIC total weight of ten or higher. A handful pop out as meeting both of those criteria: CUTI STI, CUTI STI\^2, MLDlarv, ONIpjuv, Tcop. Overall, for top predictors CUTI STI is and DDben/ONIpjuv seem to be capturing uniqe variation not captured by the other variables but the correlation across the other well supported predictors seem to be capturing the same flavor of variability (correlation of 0.4 or higher across 3+ covariates)
 
 ```{r}
 #| echo: false
@@ -259,7 +260,7 @@ corrplot.mixed(M, order = 'AOE')
 
 ```
 
-I thought I was done exploring but now I want to look at one last model...there seems to be 3 patterns of environmental varibility that are somewhat unique: variation captured by MLDlar, ONIpjuv (and DDben), and finally, CUTI STI. So lets try looking at the full model that represents each of these 3 axes...  
+I thought I was done exploring but now I want to look at one last model...there seems to be 3 patterns of environmental varibility that are somewhat unique: variation captured by MLDlar, ONIpjuv (and DDben), and finally, CUTI STI. So lets try looking at the full model that represents each of these 3 axes...
 
 ```{r}
 #| echo: false
@@ -281,15 +282,221 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 vif(best_fit3)
 ```
-...this result is interesting. We get an R^2 of of 0.43. We don't need to be extra concerned about multicollinearity, all of the variance inflation factors are well below 2 but probably worth noting that some of the covariates are not significant from a frequentist perspective BUT the interesting part of this model is that we do see improved fit.
+
+...this result is interesting. We get an R\^2 of of 0.43. We don't need to be extra concerned about multicollinearity, all of the variance inflation factors are well below 2 but probably worth noting that some of the covariates are not significant from a frequentist perspective BUT the interesting part of this model is that we do see improved fit.
+
+I am interested in looking at the patterns of variability from a different lens so I am going to apply some dimension reduction techniques:
+
+```{r}
+#| include: false
+
+
+#Organize SCC biology data
+dat<- df %>%  # drop terms not in model statement
+  dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI')))
+dat_red <- dat[complete.cases(dat), ]
+dat_scale <-  dat_red%>%
+    dplyr::select(!any_of(c('year'))) %>% 
+    mutate_all(~ scale(.))%>%
+  cbind(year=dat_red$year)
+dat<-dat_scale
+ax<- 20
+ti<-24
+wid <- 28
+plot_trends2 <- function(rotated_modelfit,
+                         years = NULL,
+                         highlight_outliers = FALSE,
+                         threshold = 0.01) {
+  rotated <- rotated_modelfit
+  df <- dfa_trends(rotated, years = years)
+  
+  # make faceted ribbon plot of trends
+  p1 <- ggplot(df, aes_string(x = "time", y = "estimate")) +
+    geom_ribbon(aes_string(ymin = "lower", ymax = "upper"), alpha = 0.4) +
+    geom_line() +
+    facet_wrap("trend_number") +
+    xlab("Time") +
+    ylab("")+
+    
+    theme(axis.text=element_text(size=ax),
+          axis.title=element_text(size=ti,face="bold"))+
+    theme_bw()
+  
+  if (highlight_outliers) {
+    swans <- find_swans(rotated, threshold = threshold)
+    df$outliers <- swans$below_threshold
+    p1 <- p1 + geom_point(data = df[which(df$outliers), ], color = "red")
+  }
+  
+  p1
+}
+
+
+plot_loadings2 <- function(rotated_modelfit,
+                           names = NULL,
+                           facet = TRUE,
+                           violin = TRUE,
+                           conf_level = 0.95,
+                           threshold = NULL) {
+  v <- dfa_loadings(rotated_modelfit,
+                    summary = FALSE,
+                    names = names,
+                    conf_level = conf_level
+  )
+  df <- dfa_loadings(rotated_modelfit,
+                     summary = TRUE,
+                     names = names,
+                     conf_level = conf_level
+  )
+  
+  # filter values below threshold
+  if (!is.null(threshold)) {
+    df <- df[df$prob_diff0 >= threshold, ]
+    v <- v[v$prob_diff0 >= threshold, ]
+  }
+  
+  if (!violin) {
+    p1 <- ggplot(df, aes_string(
+      x = "name", y = "median", col = "trend",
+      alpha = "prob_diff0"
+    )) +
+      geom_point(size = 3, position = position_dodge(0.3)) +
+      geom_errorbar(aes_string(ymin = "lower", ymax = "upper"),
+                    position = position_dodge(0.3), width = 0
+      ) +
+      geom_hline(yintercept = 0, lty = 2) +
+      coord_flip() +
+      xlab("Time Series") +
+      ylab("Loading")+
+      guides(fill="none", alpha='none')+
+      scale_x_discrete(labels = function(x) str_wrap(x, width = wid))+
+      theme(legend.position="none")+
+      theme_bw()
+  }
+  
+  if (violin) {
+    p1 <- ggplot(v, aes_string(
+      x = "name", y = "loading", fill = "trend",
+      alpha = "prob_diff0"
+    )) +
+      geom_violin(color = NA) +
+      geom_hline(yintercept = 0, lty = 2) +
+      coord_flip() +
+      xlab("Time Series") +
+      ylab("Loading")+
+      theme(axis.text=element_text(size=ax),
+            axis.title=element_text(size=ti,face="bold"))+
+      guides(fill="none", alpha='none')+
+      scale_x_discrete(labels = function(x) str_wrap(x, width = wid))+
+      theme_bw()
+  }
+  
+  if (facet) {
+    p1 <- p1 + facet_wrap(~trend, scales = "free_x")
+  }
+  
+  p1
+}
+
+
+#dat<-dat%>%select(c(year,n4,n3,n1))
+
+
+#### CALCOFI####
+y1calcofi <- 1994
+y2calcofi<- 2021
+n1 <- names(dat)[2:26]
+dat.calcofi<-dat%>%select(c(year,n1)) #just setting an order so we know how to set the variance index for each survey
+remelt = melt(dat.calcofi,id.vars = "year")
+names(remelt)<-c("year","variable","value")
+Y <- dcast(remelt, variable ~ year)
+names = Y$variable
+Y = as.matrix(Y[,-which(names(Y) == "variable")])
+
+n_chains = 3
+n_iter = 8000
+
+options(mc.cores = parallel::detectCores())
+
+# load environmental covariate data, and average over spring months to have one value per covar per year
+nspp=dim(Y)[1]
+nyear=dim(Y)[2]
+ntrend=1
+n_row=nspp*nyear
+n_row_pro=ntrend*nyear
+
+model_df = expand.grid(estimate_trend_ma = FALSE,
+                       estimate_trend_ar = TRUE, est_nu = TRUE, estimate_process_sigma = c(FALSE),
+                       var_index = c("survey"), num_trends = 1,
+                       elpd_loo = TRUE, se_elpd_loo=NA)
+
+varIndx = c(rep(1,length(n1)))
+fit.mod.calcofi1 = fit_dfa(y = Y,
+                          num_trends = 1,
+                          iter=n_iter,
+                          varIndx = NULL,
+                          chains=n_chains, estimate_nu=model_df$est_nu[1],
+                          estimate_trend_ma = model_df$estimate_trend_ma[1],
+                          estimate_trend_ar = model_df$estimate_trend_ar[1],
+                          estimate_process_sigma = FALSE,
+                          seed=123)
+
+fit.mod.calcofi2 = fit_dfa(y = Y,
+                           num_trends = 2,
+                           iter=n_iter,
+                           varIndx = NULL,
+                           chains=n_chains, estimate_nu=model_df$est_nu[1],
+                           estimate_trend_ma = model_df$estimate_trend_ma[1],
+                           estimate_trend_ar = model_df$estimate_trend_ar[1],
+                           estimate_process_sigma = FALSE,
+                           seed=123)
+
+
+fit.mod.calcofi3 = fit_dfa(y = Y,
+                           num_trends = 3,
+                           iter=n_iter,
+                           varIndx = NULL,
+                           chains=n_chains, estimate_nu=model_df$est_nu[1],
+                           estimate_trend_ma = model_df$estimate_trend_ma[1],
+                           estimate_trend_ar = model_df$estimate_trend_ar[1],
+                           estimate_process_sigma = FALSE,
+                           seed=123)
+
+is_converged(fit.mod.calcofi1)
+is_converged(fit.mod.calcofi2)
+is_converged(fit.mod.calcofi3)
+
+bayesdfa::loo(fit.mod.calcofi1)
+bayesdfa::loo(fit.mod.calcofi2)
+bayesdfa::loo(fit.mod.calcofi3)
+
+fit.mod.calcofi<-fit.mod.calcofi2
+namescalcofi<-data.frame(names)
+pars = rstan::extract(fit.mod.calcofi$model)
+r.calcofi <- rotate_trends(fit.mod.calcofi)
+p.calcofi <- plot_trends2(r.calcofi,years =dat.calcofi$year)
+p.calcofi
+l.calcofi <- plot_loadings2(r.calcofi,names=namescalcofi$names)
+l.calcofi
+is_converged(fit.mod.calcofi)
+summary(fit.mod.calcofi)
+arranged <- ggarrange(p.calcofi, l.calcofi,ncol = 2, nrow = 1,
+                      heights=c(1,1.25,1.5))
+```
+
+
+```{r}
+arranged
+
+```
 
 
 Now, from an assessment stand point this is all incredibly helpful for knowing what to look at but is not out end all be all model. My thought process moving forward is to apply some of Kristen's hake code to:
 
-1) look at GAMs which will have less of a penalty for the addition of a non-linear relationship with CUTI STI compared to other models. It will also give us a bit more flexibility in the shape of the non-linear relationship which may help the model fit better and / or improve predictive capacity. 
+1)  look at GAMs which will have less of a penalty for the addition of a non-linear relationship with CUTI STI compared to other models. It will also give us a bit more flexibility in the shape of the non-linear relationship which may help the model fit better and / or improve predictive capacity.
 
-2) Use LFO-CV and perform a similar comparison with the CV as AIC and use the marginal improvement in RMSE for each predictor
+2)  Use LFO-CV and perform a similar comparison with the CV as AIC and use the marginal improvement in RMSE for each predictor
 
-This will help use approach what is the best predictor from multiple angles. 
+This will help use approach what is the best predictor from multiple angles.
 
-And all of this is to say with the very big caveat that when we eventually have recruitment deviations through 2021ish we may get completely different results. 
+And all of this is to say with the very big caveat that when we eventually have recruitment deviations through 2021ish we may get completely different results.
