@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.3.450">
+<meta name="generator" content="quarto-1.0.36">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -11,49 +11,10 @@
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
@@ -69,12 +30,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="LinearModelsDredge_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
 
+<link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="fullcontent">
+<body>
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
+  <li><a href="#code-set-up" id="toc-code-set-up" class="nav-link" data-scroll-target="#code-set-up">Code set up</a></li>
+  <li><a href="#evaluating-multicolinearity-and-temporal-stability-of-environmental-predictors" id="toc-evaluating-multicolinearity-and-temporal-stability-of-environmental-predictors" class="nav-link" data-scroll-target="#evaluating-multicolinearity-and-temporal-stability-of-environmental-predictors">1. Evaluating multicolinearity and temporal stability of environmental predictors</a>
+  <ul class="collapse">
+  <li><a href="#running-a-dfa" id="toc-running-a-dfa" class="nav-link" data-scroll-target="#running-a-dfa">Running a DFA</a></li>
+  <li><a href="#assessing-the-weight-of-support-for-each-predictor-as-a-function-of-time-series-length" id="toc-assessing-the-weight-of-support-for-each-predictor-as-a-function-of-time-series-length" class="nav-link" data-scroll-target="#assessing-the-weight-of-support-for-each-predictor-as-a-function-of-time-series-length">Assessing the weight of support for each predictor as a function of time series length</a></li>
+  <li><a href="#assessing-model-selection-based-on-aic-and-principles-of-parsimony" id="toc-assessing-model-selection-based-on-aic-and-principles-of-parsimony" class="nav-link" data-scroll-target="#assessing-model-selection-based-on-aic-and-principles-of-parsimony">Assessing model selection based on AIC and principles of parsimony</a></li>
+  <li><a href="#considering-correlation-across-covariates-with-the-strongest-weights-of-evidence" id="toc-considering-correlation-across-covariates-with-the-strongest-weights-of-evidence" class="nav-link" data-scroll-target="#considering-correlation-across-covariates-with-the-strongest-weights-of-evidence">Considering correlation across covariates with the strongest weights of evidence</a></li>
+  </ul></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
+  </ul>
+</nav>
+</div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -87,17 +66,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-  
     
   </div>
   
 
 </header>
 
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p>The northern Yellowtail STAT has identified 3 primary ways that the incorporation and evaluation of environmental indices could be improved upon for the 2025 assessment cycle, these include:</p>
+<ol type="1">
+<li><p>Expand on non-linear relationships considered between recruitment deviations and environmental responses, specifically, evaluate the benefit of using GAMs in addition to quadratic terms.</p></li>
+<li><p>Compare predictive capacity of models (using Leave-Future-Out cross validation) in addition to model fit.</p></li>
+<li><p>Consider time-varying relationships (non-stationarity) between environmental conditions and recruitment deviations.</p></li>
+<li><p>Fitting models to recrutitment deviations from the base model and refitting with an environmental predictor has inherent circularity. Identifying additional indices that can be environmentally informed would benefit the process of developing environmentally informed assessments. These could include indices of juvenile abundance, growth, or maturity.</p></li>
+<li><p>Methods for index selection currently include fitting all possible model combintations. Issues of multicollinearity and model fitting are challenging across assessment types (i.e.&nbsp;both groundfish and salmon struggle with this). Evaluating additional approaches to deal with both multicollinearity and variable selection that also can deal with extremely limited time series would be beneficial. These can include regularization and machine learning methods.</p></li>
+</ol>
+<p>These efforts are in addition to the work lead by Nick Tolmieri and Amanda Darby which</p>
+<ol type="1">
+<li><p>Generated a ecological profile for Yellowtail north based on life history information</p></li>
+<li><p>Compared linear models including quadratic terms where aappropriate and omitting highly correlated predictors from the same model</p></li>
+<li><p>Found the model with the best fit to the data using AIC and principles of parsimony</p></li>
+<li><p>Evaluated model performance using jack knifing and predicting the last 4 years of data.</p></li>
+</ol>
+</section>
 <section id="code-set-up" class="level2">
 <h2 class="anchored" data-anchor-id="code-set-up">Code set up</h2>
 <p>First we set up the appropriate packages and references. File paths will be in reference to where the .qmd is saved</p>
+<div class="cell">
+
+</div>
 <p>Next we set up the appropriate directories and read in the data.</p>
+<div class="cell">
+
+</div>
 <p>We can build the functions including quadratic terms and omitting data that are missing years. We pull out DDegg just so we do not exceed the limit of 31 terms - pulling this out was somewhat arbitrary based on Amandas perliminary results.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -107,343 +109,214 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     PDOpjuv + LUSI + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv + 
     BeutiSTIpjuv + header + I(LSTlarv^2) + I(ONIpre^2) + I(ONIlarv^2) + 
     I(CutiSTIpjuv^2)
-&lt;environment: 0x14256f028&gt;</code></pre>
+&lt;environment: 0x7fca0a0520e0&gt;</code></pre>
 </div>
 </div>
-<p>Then we define the full model, making sure that correlated covariates are omitted. We can turn on/off the dredge function and read in the saved table instead for the sake of time when knitting the document</p>
+</section>
+<section id="evaluating-multicolinearity-and-temporal-stability-of-environmental-predictors" class="level2">
+<h2 class="anchored" data-anchor-id="evaluating-multicolinearity-and-temporal-stability-of-environmental-predictors">1. Evaluating multicolinearity and temporal stability of environmental predictors</h2>
+<section id="running-a-dfa" class="level3">
+<h3 class="anchored" data-anchor-id="running-a-dfa">Running a DFA</h3>
+<p>Before we fit models, lets first understand patterns of correlation and covariability across these environmnetal conditions. To start, lets look at a DFA. We find that across time series, there is a strong underlying trend that is predominantly loaded on by temperature time series and represents transport, mixed layer depth, and upwelling are not as well represented. The model struggles to converge with more than one latent trend.</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>Global model call: lm(formula = form_dredge, data = data_1, na.action = na.fail)
----
-Model selection table 
-          (Intercept) CutiSTIpjuv I(CutiSTIpjuv^2)    DDlarv     DDpre HCIlarv
-49             0.2215     -0.2185          -0.3035                            
-134217777     -2.0230     -0.2346          -0.2819                            
-131073        -1.9780                                                         
-2097          -1.0680     -0.2294          -0.2693           3.814e-05        
-131121        -0.8855     -0.1973          -0.2420                            
-4145           0.3772     -0.2616          -0.2826                     -0.3156
-561           -0.5241     -0.2469          -0.2774 2.583e-05                  
-4194353        0.1913     -0.2061          -0.2913                            
-33554481       0.1735     -0.2517          -0.2771                            
-268435505     -0.9949     -0.2475          -0.2795                            
-524337        -4.1850     -0.2527          -0.3313                            
-262193        -0.4035     -0.2045          -0.2592                            
-65585          0.9017     -0.2393          -0.3277                            
-          LSTpjuv MLDlarv MLDpart MLDpjuv ONIpjuv PDOlarv   Tcop  Tpart     R2
-49                                                                      0.3663
-134217777                                                 0.2067        0.4363
-131073            0.16020                                               0.2052
-2097                                                                    0.4162
-131121            0.08712                                               0.4135
-4145                                                                    0.4108
-561                                                                     0.4079
-4194353                                   -0.1917                       0.4074
-33554481                                            0.111               0.4023
-268435505                                                        0.1211 0.3985
-524337                             0.4028                               0.3957
-262193                    0.03991                                       0.3943
-65585       5.841                                                       0.3928
-              F df  logLik AICc delta weight
-49        5.203  4  -8.309 27.1  0.00  0.186
-134217777 4.387  5  -7.080 28.2  1.04  0.111
-131073    4.906  3 -10.688 28.8  1.67  0.081
-2097      4.040  5  -7.448 28.9  1.78  0.077
-131121    3.996  5  -7.496 29.0  1.87  0.073
-4145      3.950  5  -7.546 29.1  1.97  0.069
-561       3.904  5  -7.597 29.2  2.07  0.066
-4194353   3.895  5  -7.606 29.2  2.09  0.065
-33554481  3.814  5  -7.696 29.4  2.27  0.060
-268435505 3.755  5  -7.762 29.5  2.40  0.056
-524337    3.711  5  -7.811 29.6  2.50  0.053
-262193    3.690  5  -7.834 29.7  2.55  0.052
-65585     3.665  5  -7.862 29.7  2.61  0.051
-Models ranked by AICc(x) </code></pre>
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>It is pretty clear from the results that there is a fair amount of evidence that there is a nonlinear relationship between the spring transition of the Coastal Upwelling Transport Index. While this is not the most parsimonuous model, it is in many of the most supported models so lets run some summary stats to try and evaluate the weight of evidence behind. Note: because STI is inherently in the spring (April ish) it naturally falls during the pelagic juvenile stage.</p>
-<p>First, lets look at the most parsimonious (fewest covariate terms) model:</p>
+</section>
+<section id="assessing-the-weight-of-support-for-each-predictor-as-a-function-of-time-series-length" class="level3">
+<h3 class="anchored" data-anchor-id="assessing-the-weight-of-support-for-each-predictor-as-a-function-of-time-series-length">Assessing the weight of support for each predictor as a function of time series length</h3>
+<p>Next we can look at the weight of evidence in support for each time series and consider how this might change based on the observed time period of recruitment deviations. For this approach we will dredge up to 5 covariates, we will consider quadratic terms, and omit combinations of highly correlated covariates. This is not to expressly identify “THE” model but as an exercise to identify the most important variables, and potential non-stationarities in that relationship. To fit these models we will use at least 10 years of data (1994 - 2004) and iteratively add in one year of data and refit the model set. Colors denote the over all aic weight across all models with that variable.</p>
+<p>Two variables stand out, CUTI spring transition as a non-linear (quadratic) relationship and ONI during the preconditioning time period. Notably, the weight of evidence for a single time series really diminshes when when the model is fit to 1994 - 2011:2014 such that AIC is fairly distributed across time series.</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>Y_rec ~ MLDlarv
-&lt;environment: 0x144b4f238&gt;</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = bf_mod_pars, data = data_1)
-
-Residuals:
-     Min       1Q   Median       3Q      Max 
--0.72565 -0.22907  0.05237  0.26138  0.76713 
-
-Coefficients:
-            Estimate Std. Error t value Pr(&gt;|t|)  
-(Intercept) -1.97793    0.87784  -2.253   0.0363 *
-MLDlarv      0.16024    0.07234   2.215   0.0392 *
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 0.4232 on 19 degrees of freedom
-Multiple R-squared:  0.2052,    Adjusted R-squared:  0.1634 
-F-statistic: 4.906 on 1 and 19 DF,  p-value: 0.03918</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
-(`geom_line()`).</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 10 rows containing missing values or values outside the scale range
-(`geom_point()`).</code></pre>
-</div>
 <div class="cell-output-display">
 <p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>The best model include Mixed Layer Depth during the larval stage. But this model does not fit the data very well for half the time series. the R^2 is only 0.20 and when we actually plot the results the model does not fit the time series of recruitment deviations very well between 2005 and 2014. This does not bode well at all for prediction and also indicates that if we used any other type of model selection criteria that has temporally structured cross-validation (such as Leave Future out CV) this model would not have very much support. RSE is pretty good (0.4) but that is really driven by well fit observations early in the TS.</p>
-<p>We can see that the CUTI STI has a lot of support when considered as a non-linear relationship with a quadratic term. Lets look at it closer:</p>
+<p>If we try to fit a model that is highly parsimonious, by fitting only 1 covariate at a time in the same framework (or selecting the most parsimonious model) we get a different answer and find that Mixed layer depth during the larval lifestage is the most important. I find this result interesting because MLDlarv does not load onto our DFA significantly. Given all of this variability, its worth exploring these different models a bit more.</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2)
-&lt;environment: 0x142749430&gt;</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = bf_mod, data = data_1)
-
-Residuals:
-    Min      1Q  Median      3Q     Max 
--0.8252 -0.2304  0.1162  0.2454  0.5028 
-
-Coefficients:
-                 Estimate Std. Error t value Pr(&gt;|t|)   
-(Intercept)       0.22150    0.12365   1.791  0.09006 . 
-CutiSTIpjuv      -0.21847    0.09705  -2.251  0.03711 * 
-I(CutiSTIpjuv^2) -0.30345    0.09963  -3.046  0.00696 **
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 0.3882 on 18 degrees of freedom
-Multiple R-squared:  0.3663,    Adjusted R-squared:  0.2959 
-F-statistic: 5.203 on 2 and 18 DF,  p-value: 0.01647</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 2 rows containing missing values or values outside the scale range
-(`geom_line()`).</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 10 rows containing missing values or values outside the scale range
-(`geom_point()`).</code></pre>
-</div>
 <div class="cell-output-display">
 <p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
 </div>
+</div>
+</section>
+<section id="assessing-model-selection-based-on-aic-and-principles-of-parsimony" class="level3">
+<h3 class="anchored" data-anchor-id="assessing-model-selection-based-on-aic-and-principles-of-parsimony">Assessing model selection based on AIC and principles of parsimony</h3>
+<p>Lets take a look at what the best models from Amanda and Nicks workflow looks like. If we assign the best model as the model with the lowest AIC we also identify the MLDlarv model. However, this model has an extremely low R^2 and also does not fit the most recent half of the time series.</p>
+<div class="cell">
 <div class="cell-output-display">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Our R^2 is much higher, 0.37 and our RMSE is 0.39, pretty close to the MLD_[larv]. If we look at the fit, it fits the time series more consistently through time which indicates that it should be less sensitive to our model selection procedure than MLD_[larv] would be.</p>
-<p>Okay - so now lets quantify our weight of evidence behind the CUTI STI variable. In an ideal world I would use marginal improvement in RMSE for each predictor, but that is difficult to calculate over so many models, so instead I will try and parse down what I test in the GAM and LFO-CV (also very slow) by looking at the total AIC weight for each predictor instead. This takes some rearranging of the dredge output(ugh) as follows:</p>
+<p>Now what if we relax teh requirement of having the most parsimonious model and instead focus on the best fit across the entire time series, we find the best model is CUTI STI with a quadratic term.</p>
 <div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 1</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>          Predictor AICWeight
-1                R2     0.996
-2             Tpart     0.063
-3              Tcop     0.094
-4           PDOpjuv     0.087
-5           PDOlarv     0.065
-6       I(ONIpre^2)     0.011
-7            ONIpre     0.092
-8           ONIpjuv     0.119
-9      I(ONIlarv^2)     0.037
-10          ONIlarv     0.104
-11          MLDpjuv     0.080
-12          MLDpart     0.145
-13          MLDlarv     0.245
-14          LSTpjuv     0.060
-15     I(LSTlarv^2)     0.031
-16          LSTlarv     0.100
-17          HCIpjuv     0.058
-18          HCIlarv     0.070
-19            DDpre     0.084
-20           DDpjuv     0.049
-21           DDlarv     0.064
-22            DDegg     0.071
-23            DDben     0.099
-24     CutiTUMIpjuv     0.057
-25 I(CutiSTIpjuv^2)     0.192
-26      CutiSTIpjuv     0.294
-27          CSTpjuv     0.057
-28          CSTlarv     0.062
-29    BeutiTUMIpjuv     0.070
-30     BeutiSTIpjuv     0.062</code></pre>
-</div>
-</div>
-<p>It is also worth noting that the correlation coefficient for both of these is only 0.11. This made me really interested to see what the fit of the model with all three covariates was, which was also included in the top 5 models with delta AIC_c less than 2. So lets look at what that fit looks like:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2) + MLDlarv, 
-    data = data_1)
-
-Residuals:
-    Min      1Q  Median      3Q     Max 
--0.7553 -0.1996  0.1053  0.2538  0.5530 
-
-Coefficients:
-                 Estimate Std. Error t value Pr(&gt;|t|)  
-(Intercept)      -0.88547    0.95421  -0.928   0.3664  
-CutiSTIpjuv      -0.19725    0.09777  -2.018   0.0597 .
-I(CutiSTIpjuv^2) -0.24202    0.11174  -2.166   0.0448 *
-MLDlarv           0.08712    0.07448   1.170   0.2582  
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 0.3843 on 17 degrees of freedom
-Multiple R-squared:  0.4135,    Adjusted R-squared:   0.31 
-F-statistic: 3.996 on 3 and 17 DF,  p-value: 0.02532</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 2 rows containing missing values or values outside the scale range
-(`geom_line()`).</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 10 rows containing missing values or values outside the scale range
-(`geom_point()`).</code></pre>
-</div>
 <div class="cell-output-display">
 <p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Helpful to see, but it does not really improve the fit of the model that much and MLDlarv is not significant. The last thing I am curious to take a peek at is how correlated some of the most meaningful predictors are. We can do this two ways 1) what is in the tope models (del AIC&lt;2) or look at the one that have AIC total weight of ten or higher. A handful pop out as meeting both of those criteria: CUTI STI, CUTI STI^2, MLDlarv, ONIpjuv, Tcop. Overall, for top predictors CUTI STI is and DDben/ONIpjuv seem to be capturing uniqe variation not captured by the other variables but the correlation across the other well supported predictors seem to be capturing the same flavor of variability (correlation of 0.4 or higher across 3+ covariates)</p>
+<p>We can also look at a table of the best models. It becomes very apparent the top models include CUTI STI as a non-linear term, and the models that include it have much better R^2 values.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> CutiSTIpjuv </th>
+   <th style="text-align:right;"> I.CutiSTIpjuv.2. </th>
+   <th style="text-align:right;"> DDpre </th>
+   <th style="text-align:right;"> HCIlarv </th>
+   <th style="text-align:right;"> MLDlarv </th>
+   <th style="text-align:right;"> Tcop </th>
+   <th style="text-align:right;"> R2 </th>
+   <th style="text-align:right;"> AICc </th>
+   <th style="text-align:right;"> delta </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> -0.22 </td>
+   <td style="text-align:right;"> -0.30 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.37 </td>
+   <td style="text-align:right;"> 27.12 </td>
+   <td style="text-align:right;"> 0.00 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.23 </td>
+   <td style="text-align:right;"> -0.28 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.21 </td>
+   <td style="text-align:right;"> 0.44 </td>
+   <td style="text-align:right;"> 28.16 </td>
+   <td style="text-align:right;"> 1.04 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.16 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.21 </td>
+   <td style="text-align:right;"> 28.79 </td>
+   <td style="text-align:right;"> 1.67 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.23 </td>
+   <td style="text-align:right;"> -0.27 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.42 </td>
+   <td style="text-align:right;"> 28.90 </td>
+   <td style="text-align:right;"> 1.78 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.20 </td>
+   <td style="text-align:right;"> -0.24 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.09 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.41 </td>
+   <td style="text-align:right;"> 28.99 </td>
+   <td style="text-align:right;"> 1.87 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.26 </td>
+   <td style="text-align:right;"> -0.28 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> -0.32 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.41 </td>
+   <td style="text-align:right;"> 29.09 </td>
+   <td style="text-align:right;"> 1.97 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</section>
+<section id="considering-correlation-across-covariates-with-the-strongest-weights-of-evidence" class="level3">
+<h3 class="anchored" data-anchor-id="considering-correlation-across-covariates-with-the-strongest-weights-of-evidence">Considering correlation across covariates with the strongest weights of evidence</h3>
+<p>Using the first framework we look at, we can take the entire time series through 2014, and look at what predictors have the most evidence of support. Lets say that we only want to look at predictors that have at least 15% of the model support for the full time series. Looking at the data this way, the covariates that have the best weight of evidence are: long shore transport (larv), ONI (pelagic juveniles, larval, and preconditioning), CUTI STI, degree days benthic juveniles, and mixed layer depth larval.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> last_year </th>
+   <th style="text-align:left;"> variable </th>
+   <th style="text-align:right;"> value </th>
+   <th style="text-align:left;"> indicator </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:left;"> MLDlarv </td>
+   <td style="text-align:right;"> 0.2060605 </td>
+   <td style="text-align:left;"> MLDla </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>Thinking about the variables with the most weight of evidence, we can test out a backwards selection technique. Instead of AIC (which is prone to overfitting and we already know these variables have AIC support) we can use VIF to try and avoid multicollinerity. Lets start with the model that is saturated with the variables that have strong AIC support.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>Global model call: lm(formula = form_dredge, data = data_1, na.action = na.fail)
----
-Model selection table 
-          (Intrc)   CtSTI CtSTI^2     DDlrv     DDpre   HCIlr   MLDlr   ONIpj
-49         0.2215 -0.2185 -0.3035                                            
-134217777 -2.0230 -0.2346 -0.2819                                            
-131073    -1.9780                                             0.16020        
-2097      -1.0680 -0.2294 -0.2693           3.814e-05                        
-131121    -0.8855 -0.1973 -0.2420                             0.08712        
-4145       0.3772 -0.2616 -0.2826                     -0.3156                
-561       -0.5241 -0.2469 -0.2774 2.583e-05                                  
-4194353    0.1913 -0.2061 -0.2913                                     -0.1917
-33554481   0.1735 -0.2517 -0.2771                                            
-268435505 -0.9949 -0.2475 -0.2795                                            
-          PDOlr   Tcop  Tpart     R2     F df  logLik AICc delta weight
-49                            0.3663 5.203  4  -8.309 27.1  0.00  0.221
-134217777       0.2067        0.4363 4.387  5  -7.080 28.2  1.04  0.131
-131073                        0.2052 4.906  3 -10.688 28.8  1.67  0.096
-2097                          0.4162 4.040  5  -7.448 28.9  1.78  0.091
-131121                        0.4135 3.996  5  -7.496 29.0  1.87  0.086
-4145                          0.4108 3.950  5  -7.546 29.1  1.97  0.082
-561                           0.4079 3.904  5  -7.597 29.2  2.07  0.078
-4194353                       0.4074 3.895  5  -7.606 29.2  2.09  0.077
-33554481  0.111               0.4023 3.814  5  -7.696 29.4  2.27  0.071
-268435505              0.1211 0.3985 3.755  5  -7.762 29.5  2.40  0.066
-Models ranked by AICc(x) </code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>          Predictor AICWeight
-1                R2     0.996
-26      CutiSTIpjuv     0.294
-13          MLDlarv     0.245
-25 I(CutiSTIpjuv^2)     0.192
-12          MLDpart     0.145
-8           ONIpjuv     0.119
-10          ONIlarv     0.104
-16          LSTlarv     0.100
-23            DDben     0.099
-3              Tcop     0.094
-7            ONIpre     0.092
-4           PDOpjuv     0.087
-19            DDpre     0.084
-11          MLDpjuv     0.080
-22            DDegg     0.071
-18          HCIlarv     0.070
-29    BeutiTUMIpjuv     0.070
-5           PDOlarv     0.065
-21           DDlarv     0.064
-2             Tpart     0.063
-28          CSTlarv     0.062
-30     BeutiSTIpjuv     0.062
-14          LSTpjuv     0.060
-17          HCIpjuv     0.058
-24     CutiTUMIpjuv     0.057
-27          CSTpjuv     0.057
-20           DDpjuv     0.049
-9      I(ONIlarv^2)     0.037
-15     I(LSTlarv^2)     0.031
-6       I(ONIpre^2)     0.011</code></pre>
+<pre><code>    LSTlarv     ONIpjuv     ONIlarv      ONIpre CutiSTIpjuv     MLDpjuv 
+       1.88        2.91       32.64       28.47        1.36        1.63 
+      DDben 
+       1.88 </code></pre>
 </div>
 <div class="cell-output-display">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>I thought I was done exploring but now I want to look at one last model…there seems to be 3 patterns of environmental varibility that are somewhat unique: variation captured by MLDlar, ONIpjuv (and DDben), and finally, CUTI STI. So lets try looking at the full model that represents each of these 3 axes…</p>
+<p>ONIlarv is correlated with a bunch of covariates. Lets ditch it.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-lm(formula = Y_rec ~ CutiSTIpjuv + I(CutiSTIpjuv^2) + MLDlarv + 
-    ONIpjuv, data = data_1)
-
-Residuals:
-    Min      1Q  Median      3Q     Max 
--0.8256 -0.1520  0.1182  0.2260  0.4776 
-
-Coefficients:
-                 Estimate Std. Error t value Pr(&gt;|t|)  
-(Intercept)      -0.62752    1.04292  -0.602   0.5558  
-CutiSTIpjuv      -0.19412    0.09949  -1.951   0.0688 .
-I(CutiSTIpjuv^2) -0.24921    0.11408  -2.185   0.0441 *
-MLDlarv           0.06520    0.08242   0.791   0.4405  
-ONIpjuv          -0.13088    0.19446  -0.673   0.5105  
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-Residual standard error: 0.3906 on 16 degrees of freedom
-Multiple R-squared:  0.4297,    Adjusted R-squared:  0.2871 
-F-statistic: 3.014 on 4 and 16 DF,  p-value: 0.04967</code></pre>
+<pre><code>    LSTlarv     ONIpjuv      ONIpre CutiSTIpjuv     MLDpjuv       DDben 
+       1.62        2.26        1.25        1.35        1.47        1.88 </code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 2 rows containing missing values or values outside the scale range
-(`geom_line()`).</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 10 rows containing missing values or values outside the scale range
-(`geom_point()`).</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>     CutiSTIpjuv I(CutiSTIpjuv^2)          MLDlarv          ONIpjuv 
-        1.264088         1.577011         1.523050         1.207381 </code></pre>
-</div>
-</div>
-<p>…this result is interesting. We get an R^2 of of 0.43. We don’t need to be extra concerned about multicollinearity, all of the variance inflation factors are well below 2 but probably worth noting that some of the covariates are not significant from a frequentist perspective BUT the interesting part of this model is that we do see improved fit.</p>
-<p>I am interested in looking at the patterns of variability from a different lens so I am going to apply some dimension reduction techniques:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>arranged</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Now, from an assessment stand point this is all incredibly helpful for knowing what to look at but is not out end all be all model. My thought process moving forward is to apply some of Kristen’s hake code to:</p>
+<p>And finally, what does this model look like? We get a slightly worse fit than just using upwelling, and we still struggle with overestimating recruitment when it is low (the negative values)</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>We don’t want to use DFA latent trends as predictors because they lack transparity and interpretibility - but lets look at it…it is GARBAGE. Why? Likely because it is dominated by temperature and not influenced by the transport, upwelling and mixed layer depth variables that provide better fits. Therefore, even using a DFA would require some degree of covariate exploration for any explanatory power or predictive ability.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
 <ol type="1">
-<li><p>look at GAMs which will have less of a penalty for the addition of a non-linear relationship with CUTI STI compared to other models. It will also give us a bit more flexibility in the shape of the non-linear relationship which may help the model fit better and / or improve predictive capacity.</p></li>
-<li><p>Use LFO-CV and perform a similar comparison with the CV as AIC and use the marginal improvement in RMSE for each predictor</p></li>
+<li><p>Fit GAMs with temporally stable relationships (status: code development)</p></li>
+<li><p>Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity</p></li>
+<li><p>Perform model selection using LFO-CV (status: code development)</p></li>
+<li><p>Fit models using regularization techniques</p></li>
+<li><p>Fit models using machine learning techniques</p></li>
 </ol>
-<p>This will help use approach what is the best predictor from multiple angles.</p>
-<p>And all of this is to say with the very big caveat that when we eventually have recruitment deviations through 2021ish we may get completely different results.</p>
 </section>
 
 </main>
@@ -475,23 +348,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     icon: icon
   };
   anchorJS.add('.anchored');
-  const isCodeAnnotation = (el) => {
-    for (const clz of el.classList) {
-      if (clz.startsWith('code-annotation-')) {                     
-        return true;
-      }
-    }
-    return false;
-  }
   const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
+    target: function(trigger) {
+      return trigger.previousElementSibling;
     }
   });
   clipboard.on('success', function(e) {
@@ -503,24 +362,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     button.classList.add('code-copy-button-checked');
     var currentTitle = button.getAttribute("title");
     button.setAttribute("title", "Copied!");
-    let tooltip;
-    if (window.bootstrap) {
-      button.setAttribute("data-bs-toggle", "tooltip");
-      button.setAttribute("data-bs-placement", "left");
-      button.setAttribute("data-bs-title", "Copied!");
-      tooltip = new bootstrap.Tooltip(button, 
-        { trigger: "manual", 
-          customClass: "code-copy-button-tooltip",
-          offset: [0, -8]});
-      tooltip.show();    
-    }
     setTimeout(function() {
-      if (tooltip) {
-        tooltip.hide();
-        button.removeAttribute("data-bs-title");
-        button.removeAttribute("data-bs-toggle");
-        button.removeAttribute("data-bs-placement");
-      }
       button.setAttribute("title", currentTitle);
       button.classList.remove('code-copy-button-checked');
     }, 1000);
@@ -548,136 +390,31 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   for (var i=0; i<noterefs.length; i++) {
     const ref = noterefs[i];
     tippyHover(ref, function() {
-      // use id or data attribute instead here
-      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      let href = ref.getAttribute('href');
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
       return note.innerHTML;
     });
   }
-      let selectedAnnoteEl;
-      const selectorForAnnotation = ( cell, annotation) => {
-        let cellAttr = 'data-code-cell="' + cell + '"';
-        let lineAttr = 'data-code-annotation="' +  annotation + '"';
-        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-        return selector;
-      }
-      const selectCodeLines = (annoteEl) => {
-        const doc = window.document;
-        const targetCell = annoteEl.getAttribute("data-target-cell");
-        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-        const lineIds = lines.map((line) => {
-          return targetCell + "-" + line;
-        })
-        let top = null;
-        let height = null;
-        let parent = null;
-        if (lineIds.length > 0) {
-            //compute the position of the single el (top and bottom and make a div)
-            const el = window.document.getElementById(lineIds[0]);
-            top = el.offsetTop;
-            height = el.offsetHeight;
-            parent = el.parentElement.parentElement;
-          if (lineIds.length > 1) {
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
-            height = bottom - top;
-          }
-          if (top !== null && height !== null && parent !== null) {
-            // cook up a div (if necessary) and position it 
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            div.style.top = top - 2 + "px";
-            div.style.height = height + 4 + "px";
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            gutterDiv.style.top = top - 2 + "px";
-            gutterDiv.style.height = height + 4 + "px";
-          }
-          selectedAnnoteEl = annoteEl;
-        }
-      };
-      const unselectCodeLines = () => {
-        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-        elementsIds.forEach((elId) => {
-          const div = window.document.getElementById(elId);
-          if (div) {
-            div.remove();
-          }
-        });
-        selectedAnnoteEl = undefined;
-      };
-      // Attach click handler to the DT
-      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-      for (const annoteDlNode of annoteDls) {
-        annoteDlNode.addEventListener('click', (event) => {
-          const clickedEl = event.target;
-          if (clickedEl !== selectedAnnoteEl) {
-            unselectCodeLines();
-            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-            if (activeEl) {
-              activeEl.classList.remove('code-annotation-active');
-            }
-            selectCodeLines(clickedEl);
-            clickedEl.classList.add('code-annotation-active');
-          } else {
-            // Unselect the line
-            unselectCodeLines();
-            clickedEl.classList.remove('code-annotation-active');
-          }
-        });
-      }
-  const findCites = (el) => {
-    const parentEl = el.parentElement;
-    if (parentEl) {
-      const cites = parentEl.dataset.cites;
-      if (cites) {
-        return {
-          el,
-          cites: cites.split(' ')
-        };
-      } else {
-        return findCites(el.parentElement)
-      }
-    } else {
-      return undefined;
-    }
-  };
   var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
   for (var i=0; i<bibliorefs.length; i++) {
     const ref = bibliorefs[i];
-    const citeInfo = findCites(ref);
-    if (citeInfo) {
-      tippyHover(citeInfo.el, function() {
-        var popup = window.document.createElement('div');
-        citeInfo.cites.forEach(function(cite) {
-          var citeDiv = window.document.createElement('div');
-          citeDiv.classList.add('hanging-indent');
-          citeDiv.classList.add('csl-entry');
-          var biblioDiv = window.document.getElementById('ref-' + cite);
-          if (biblioDiv) {
-            citeDiv.innerHTML = biblioDiv.innerHTML;
-          }
-          popup.appendChild(citeDiv);
-        });
-        return popup.innerHTML;
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
       });
-    }
+      return popup.innerHTML;
+    });
   }
 });
 </script>

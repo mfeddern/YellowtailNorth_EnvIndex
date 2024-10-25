@@ -12,12 +12,12 @@ source("Src/Functions-for-envir-index.r")
 
 # bring in data ################################################################
 # combined fish and environmental drivers file
-df = data.frame(read.csv(paste0(data_dir,"DATA_Combined_glorys_yellowtail.csv"), header = T))
+df = data.frame(read.csv(paste0(data_dir,"02_DATA_Combined_glorys_yellowtail.csv"), header = T))
 
 # get predictors to create model formula #######################################
 envir_data = df %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('year','sd','Y_rec','ZOOpjuv','ZOOben')))%>%  # drop terms not in model statement
-    dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI')))%>% 
+    dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv')))%>% 
     mutate_all(~ scale(.))
 head(envir_data)
 dim(envir_data)
@@ -28,7 +28,7 @@ data.pca <- princomp(envir_data2)
 summary(data.pca)
 
 # build model - full formula ###################################################
-quadratic_terms = c('LSTlarv','ONIpre','ONIlarv', 'CutiSTIpjuv')
+quadratic_terms = c('LSTlarv','ONIpre','ONIlarv', 'CutiSTIpjuv','bakun_sti')
 
 form_dredge = make_dredge_equation(envir_data = envir_data, quadratic_vars = quadratic_terms)
 form_dredge
@@ -56,7 +56,7 @@ fit_dredge <- function(fit){
                     #!(DDben && ZOOben) && 
                     !(DDlarv && DDpjuv) && 
                     !(DDlarv && HCIlarv) && 
-                    !(DDlarv && ONIlarv) && 
+                    #!(DDlarv && ONIlarv) && 
                     !(DDlarv && PDOlarv) && 
                     !(DDlarv && Tpart) && 
                     #!(DDlarv && ZOOpjuv) && 
@@ -76,15 +76,16 @@ fit_dredge <- function(fit){
                     !(HCIlarv && PDOlarv) && 
                     !(HCIpjuv && PDOpjuv) && 
                     !(MLDpart && MLDlarv) && 
-                    !(ONIlarv && PDOlarv) && 
-                    !(ONIpre && ONIlarv) && 
+                    #!(ONIlarv && PDOlarv) && 
+                   # !(ONIpre && ONIlarv) && 
                     #!(PDOlarv && ZOOpjuv) && 
                     !(Tpart && HCIlarv) && 
                     !(Tpart && PDOlarv) && 
                     #!(Tpart && ZOOpjuv) &&
                     dc(LSTlarv, I(LSTlarv^2)) &&
                     dc(ONIpre, I(ONIpre^2)) &&
-                    dc(ONIlarv, I(ONIlarv^2)) &&
+                    dc(bakun_sti, I(bakun_sti^2)) &&
+                   # dc(ONIlarv, I(ONIlarv^2)) &&
                     dc(CutiSTIpjuv, I(CutiSTIpjuv^2)),
                   extra = list(R2 = function(x)
                     summary(x)$r.squared[[1]], 

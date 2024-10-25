@@ -40,7 +40,7 @@ BEUTI_TUMI<-read.csv('Data/Raw_Environmental/beuti_tumi.csv')%>%
   dplyr::rename(year=X)%>%
   select(year, BeutiTUMIpjuv)
 
-CUTI_STI<- read.csv('Data/Raw_Environmental/cuti_sti.csv')%>%
+CUTI_STI<- read.csv('data-yellowtail/Raw_Environmental/cuti_sti.csv')%>%
   select(X, X45N, X46N, X47N)%>%
   pivot_longer(cols=-X,names_to='location', values_to='CutiSTI')%>%
   group_by(X)%>%
@@ -77,3 +77,21 @@ pdf(file = "Corr.Plot.pdf",   # The directory you want to save the file in
 
 corrplot.mixed(corplotdat, lower = 'circle', upper = 'number', order = 'hclust')
 dev.off()
+
+
+CUTI_corr<- read.csv('data-yellowtail/Raw_Environmental/cuti_sti.csv') %>%
+select(-X)
+corrplot.mixed(cor(na.omit(CUTI_corr)), lower = 'circle', upper = 'number')
+
+bakun_sti<- read.csv('data-yellowtail/Raw_Environmental/bakun_sti.csv')%>%
+  select(-time)%>%
+  filter(lat!=42)%>%
+  #pivot_wider(names_from = lat,values_from = bakun_sti)%>%
+  group_by(year)%>%
+  dplyr::summarise(bakun_sti=mean(bakun_sti))%>%
+  mutate(bakun_sti=scale(bakun_sti))
+
+combine_data<-read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv")%>%
+  left_join(bakun_sti)
+write.csv(combine_data,"data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv")
+

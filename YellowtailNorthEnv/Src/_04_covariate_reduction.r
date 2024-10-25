@@ -6,14 +6,19 @@ library(lubridate)
 library(mgcv)
 library(MuMIn)
 library(corrplot)
-
+library(dplyr)
+library(reshape2)
+library(bayesdfa)
+library(MCMCvis)
+library(stringr)
+library(ggpubr)
 source("Src/_00_yellowtail-header.r")
 source("Src/Functions-for-envir-index.r")
 # set directories ##############################################################
 
 # bring in data ################################################################
 # combined fish and environmental drivers file
-df = data.frame(read.csv(paste0(data_dir,"DATA_Combined_glorys_yellowtail.csv"), header = T))
+df = data.frame(read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv", header = T))
 
 # get predictors to create model formula #######################################
 envir_data = df %>%  # drop terms not in model statement
@@ -27,30 +32,19 @@ M = data.frame(cor(envir_data))
 M <- tibble::rownames_to_column(M, "xvar")
 M<-M%>%pivot_longer(!xvar, names_to = 'yvar', values_to = 'corr')
 uncorr<-M%>%filter(corr<0.4&corr> -0.4)
-
+corrplotdat<-cor(envir_data)
 unique(uncorr$xvar)
-corrPlot<-corrplot.mixed(M)
+corrplot.mixed(corrplotdat)
 
 
+  the_lm <-  lm(Y_rec ~ DDpre + DDegg + DDlarv + DDpjuv + DDben + Tcop + Tpart + 
+    MLDpart + MLDlarv + MLDpjuv + CSTlarv + CSTpjuv + LSTlarv + 
+    LSTpjuv + HCIlarv + HCIpjuv + ONIpre + ONIlarv + ONIpjuv + 
+    PDOlarv + PDOpjuv + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv+bakun_sti, data=data_1)
+vif(the_lm)
 
-
-pdf(file = "figures-yellowtail/CorrPlot.pdf",   # The directory you want to save the file in
-    width = 12, # The width of the plot in inches
-    height = 12) # The height of the plot in inches
-corrplot.mixed(M)
-
-dev.off()
-
-
-
-library(dplyr)
-library(reshape2)
-library(bayesdfa)
-library(MCMCvis)
-library(ggplot2)
-library(stringr)
-library(ggpubr)
-#Organize SCC biology data
+attributes(alias(fit)$Complete)$dimnames[[1]]
+  #Organize SCC biology data
 dat<- df %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI')))
 dat_red <- dat[complete.cases(dat), ]
@@ -157,11 +151,6 @@ plot_loadings2 <- function(rotated_modelfit,
   p1
 }
 
-for(i in 1:ncol(dat)){
-  if(names(dat)[i] %in% ids){
-    dat[,i] <- log(dat[,i])
-  }
-}
 
 #dat<-dat%>%select(c(year,n4,n3,n1))
 
@@ -237,6 +226,9 @@ bayesdfa::loo(fit.mod.calcofi3)
 fit.mod.calcofi<-fit.mod.calcofi1
 namescalcofi<-data.frame(names)
 pars = rstan::extract(fit.mod.calcofi$model)
+write_rds(fit.mod.calcofi,'data-yellowtail/fit.mod.calcofi.rds')
+
+
 r.calcofi <- rotate_trends(fit.mod.calcofi)
 p.calcofi <- plot_trends2(r.calcofi,years =dat.calcofi$year)
 p.calcofi
@@ -247,3 +239,123 @@ summary(fit.mod.calcofi)
 arranged <- ggarrange(p.calcofi, l.calcofi,ncol = 2, nrow = 1,
                       heights=c(1,1.25,1.5))
 arranged
+
+png(filename="figures-yellowtail/DFATrend.png")
+plot(arranged)
+dev.off()
+
+
+
+quadratic_terms = c('LSTlarv','ONIpre','ONIlarv', 'CutiSTIpjuv', 'bakun_sti')
+
+form_dredge = make_dredge_equation(envir_data = envir_data, quadratic_vars = quadratic_terms)
+form_dredge
+
+
+sf_dredge_fun <- function(last_year){
+  print(last_year)
+ the_data <- data_1%>% filter(year <= last_year) %>%
+   dplyr::select(Y_rec, DDpre, DDegg, DDlarv, DDpjuv, DDben, Tcop, Tpart, 
+    MLDpart, MLDlarv, MLDpjuv, CSTlarv, CSTpjuv, LSTlarv, 
+    LSTpjuv, HCIlarv, HCIpjuv, ONIpre, ONIlarv, ONIpjuv, 
+    PDOlarv, PDOpjuv, CutiSTIpjuv, CutiTUMIpjuv, BeutiTUMIpjuv, 
+    BeutiSTIpjuv)
+ 
+  the_lm <-  lm(Y_rec ~ DDpre + DDegg + DDlarv + DDpjuv + DDben + Tcop + Tpart + 
+    MLDpart + MLDlarv + MLDpjuv + CSTlarv + CSTpjuv + LSTlarv + 
+    LSTpjuv + HCIlarv + HCIpjuv + ONIpre + ONIlarv + ONIpjuv + 
+    PDOlarv + PDOpjuv + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv + 
+    BeutiSTIpjuv + I(LSTlarv^2) + I(ONIpre^2) + I(ONIlarv^2) + 
+    I(CutiSTIpjuv^2), data=the_data, na.action = "na.fail")
+  
+  the_lm_d <- dredge(the_lm, rank = "AICc", m.lim = c(0, 5), 
+                    subset= # block correlated terms from the model
+                    !(CutiSTIpjuv && BeutiSTIpjuv) && 
+                    #!(DDben && ZOOben) && 
+                    !(DDlarv && DDpjuv) && 
+                    !(DDlarv && HCIlarv) && 
+                    !(DDlarv && ONIlarv) && 
+                    !(DDlarv && PDOlarv) && 
+                    !(DDlarv && Tpart) && 
+                    #!(DDlarv && ZOOpjuv) && 
+                    !(DDpjuv && HCIlarv) && 
+                    !(DDpjuv && HCIpjuv) && 
+                    !(DDpjuv && PDOlarv) && 
+                    !(DDpjuv && PDOpjuv) && 
+                    !(DDpjuv && Tpart) && 
+                    #!(DDpjuv && ZOOpjuv) && 
+                    !(DDpre && DDegg) && 
+                    !(DDpre && DDlarv) && 
+                    !(DDpre && HCIlarv) &&
+                    !(DDpre && PDOlarv) && 
+                    !(DDpre && Tcop) && 
+                    !(DDpre && Tpart) && 
+                    #!(DDpre && ZOOpjuv) && 
+                    !(HCIlarv && PDOlarv) && 
+                    !(HCIpjuv && PDOpjuv) && 
+                    !(MLDpart && MLDlarv) && 
+                    !(ONIlarv && PDOlarv) && 
+                    !(ONIpre && ONIlarv) && 
+                    #!(PDOlarv && ZOOpjuv) && 
+                    !(Tpart && HCIlarv) && 
+                    !(Tpart && PDOlarv) && 
+                    #!(Tpart && ZOOpjuv) &&
+                    dc(LSTlarv, I(LSTlarv^2)) &&
+                    dc(ONIpre, I(ONIpre^2)) &&
+                    dc(ONIlarv, I(ONIlarv^2)) &&
+                    dc(CutiSTIpjuv, I(CutiSTIpjuv^2)))
+  aic_tibble <- as_tibble(the_lm_d)
+  aic_tibble[["last_year"]] <- last_year
+
+  important_variables <- list(sw(the_lm_d), last_year)
+ 
+  aic_and_important_variables <- list(aic_tibble, important_variables)
+ 
+  return(aic_and_important_variables)
+}
+
+
+sf_last_return_year_tibble <- tibble(last_year = 2004:2014) #minimum of 10 years of data
+
+sf_dredge_over_time <- sf_last_return_year_tibble %>% pmap(sf_dredge_fun)
+
+#Indexing: [[A]][[B]][[C]]. A = Final return year (index, not number). B = The dredge table [1] or importance table [2]. C = Final return year (number)
+
+sf_dredge_out <- NULL
+for(i in 1:length(sf_last_return_year_tibble$last_year)){
+  new_row <- as_tibble(t(as.data.frame(sf_dredge_over_time[[i]][[2]][[1]])))
+  new_row$last_year <- sf_dredge_over_time[[i]][[2]][[2]]
+  sf_dredge_out <- bind_rows(sf_dredge_out, new_row)
+}
+
+sf_dredge_out_long_0 <- sf_dredge_out %>% pivot_longer(!last_year, names_to = "variable", values_to = "value")# %>% left_join(sac_nice_indicators)
+sf_dredge_out_long_0$indicator <- str_sub(sf_dredge_out_long_0$variable, 1, -3)
+
+sf_dredge_out_long_0_FULL <- sf_dredge_out_long_0
+write_rds(sf_dredge_out_long_01, "timevarying_dredge_singlecov.rds")
+write_rds(sf_dredge_out_long_0, "timevarying_dredge.rds")
+p <- ggplot(sf_dredge_out_long_0%>%filter(last_year <= 2014), aes(as.factor(last_year), variable, fill= value)) + 
+  geom_tile()
+p 
+
+p <- ggplot(sf_dredge_out_long_01%>%filter(last_year <= 2014), aes(as.factor(last_year), variable, fill= value)) + 
+  geom_tile()
+p 
+
+sf_dredge_out_long_0%>%filter(last_year==2014&value>0.15)
+
+the_lm <-  lm(Y_rec ~  LSTlarv + ONIpjuv + ONIlarv + 
+    ONIpre  + CutiSTIpjuv + MLDpjuv + DDben, data=data_1)
+vif(the_lm)
+
+the_lm <-  lm(Y_rec ~  LSTlarv + ONIpjuv  +
+    ONIpre  + CutiSTIpjuv + MLDpjuv + DDben+ CutiSTIpjuv, data=data_1)
+vif(the_lm)
+
+lm_sat <-data_1%>%select(LSTlarv, ONIpjuv,ONIlarv,ONIpre,CutiSTIpjuv, MLDpjuv, DDben)
+corrplotsat<-cor(lm_sat)
+corrplot.mixed(corrplotsat)
+
+lm_sat <-data_1%>%select(LSTlarv, ONIpjuv,ONIpre,CutiSTIpjuv, MLDpjuv, DDben)
+corrplotsat<-cor(lm_sat)
+corrplot.mixed(corrplotsat)
