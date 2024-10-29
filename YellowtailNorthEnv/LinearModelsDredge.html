@@ -103,13 +103,13 @@ ul.task-list{list-style: none;}
 <p>We can build the functions including quadratic terms and omitting data that are missing years. We pull out DDegg just so we do not exceed the limit of 31 terms - pulling this out was somewhat arbitrary based on Amandas perliminary results.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>Y_rec ~ DDpre + DDlarv + DDpjuv + DDben + Tcop + Tpart + MLDpart + 
-    MLDlarv + MLDpjuv + CSTlarv + CSTpjuv + LSTlarv + LSTpjuv + 
-    HCIlarv + HCIpjuv + ONIpre + ONIlarv + ONIpjuv + PDOlarv + 
-    PDOpjuv + LUSI + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv + 
-    BeutiSTIpjuv + header + I(LSTlarv^2) + I(ONIpre^2) + I(ONIlarv^2) + 
-    I(CutiSTIpjuv^2)
-&lt;environment: 0x7fca0a0520e0&gt;</code></pre>
+<pre><code>Y_rec ~ X + DDpre + DDlarv + DDpjuv + DDben + Tcop + Tpart + 
+    MLDpart + MLDlarv + MLDpjuv + CSTlarv + CSTpjuv + LSTlarv + 
+    LSTpjuv + HCIlarv + HCIpjuv + ONIpre + ONIlarv + ONIpjuv + 
+    PDOlarv + PDOpjuv + LUSI + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv + 
+    BeutiSTIpjuv + bakun_sti + header + I(LSTlarv^2) + I(ONIpre^2) + 
+    I(ONIlarv^2) + I(CutiSTIpjuv^2)
+&lt;environment: 0x7ff4df50c278&gt;</code></pre>
 </div>
 </div>
 </section>
@@ -304,6 +304,38 @@ ul.task-list{list-style: none;}
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don’t find that there are significant differences in CUTI STI before and after 2010. TO DO: Touch base with Mike about how CUTI may/may not address ROMS changes.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>            CutiSTIpjuv bakun_sti
+CutiSTIpjuv   1.0000000 0.5243211
+bakun_sti     0.5243211 1.0000000</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = CutiSTIpjuv ~ ROMS, data = up)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-1.6975 -0.7755  0.1243  0.6157  2.0076 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept) -0.06597    0.21074  -0.313    0.756
+ROMSlate     0.19242    0.35991   0.535    0.596
+
+Residual standard error: 1.011 on 33 degrees of freedom
+Multiple R-squared:  0.008587,  Adjusted R-squared:  -0.02146 
+F-statistic: 0.2858 on 1 and 33 DF,  p-value: 0.5965</code></pre>
 </div>
 </div>
 </section>

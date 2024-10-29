@@ -63,7 +63,7 @@ Next we set up the appropriate directories and read in the data.
 #| echo: false
 #| warning: false
 
-df = data.frame(read.csv("data-yellowtail/DATA_Combined_glorys_yellowtail.csv"), header = T)
+df = data.frame(read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv"), header = T)
 envir_data = df %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('year','sd','Y_rec','ZOOpjuv','ZOOben','DDegg')))
 #head(envir_data)
@@ -407,7 +407,7 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 ```
 
-We don't want to use DFA latent trends as predictors because they lack transparity and interpretibility - but lets look at it...it is GARBAGE. Why? Likely because it is dominated by temperature and not influenced by the transport, upwelling and mixed layer depth variables that provide better fits. Therefore, even using a DFA would require some degree of covariate exploration for any explanatory power or predictive ability.
+We don't want to use DFA latent trends as predictors because they lack transparency and interpretability - but lets look at it...it is GARBAGE. Why? Likely because it is dominated by temperature and not influenced by the transport, upwelling and mixed layer depth variables that provide better fits. Therefore, even using a DFA would require some degree of covariate exploration for any explanatory power or predictive ability.
 
 ```{r}
 #| echo: false
@@ -436,6 +436,38 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 ```
 
+The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don't find that there are significant differences in CUTI STI before and after 2010. TO DO: Touch base with Mike about how CUTI may/may not address ROMS changes.
+
+```{r}
+#| echo: false
+#| warning: false
+
+data_3<-data_2%>%select(year,bakun_sti, CutiSTIpjuv)%>%
+  pivot_longer(cols=c(bakun_sti, CutiSTIpjuv),names_to = "upwelling", values_to = "index")
+
+
+
+ggplot(data_3, aes(x=year, y=index, group=upwelling, col=upwelling)) + 
+  geom_line(lwd=1) +
+  theme_bw()
+
+up<-read.csv('data-yellowtail/upwellingts.csv')
+cor(up%>%select(CutiSTIpjuv,bakun_sti))
+
+up2<-up%>%
+  pivot_longer(cols=c(bakun_sti, CutiSTIpjuv),names_to = "upwelling", values_to = "index")
+
+ggplot(up2, aes(x=year, y=index, group=upwelling, col=upwelling)) + 
+  geom_line(lwd=1) +
+  theme_bw()
+
+up<-up%>%
+  mutate(ROMS=ifelse(year<=2010, 'early','late'))
+
+summary(lm(CutiSTIpjuv~ROMS,data=up))
+#summary(lm(CutiSTIpjuv~year,data=up))
+```
+
 ## Next steps
 
 1. Fit GAMs with temporally stable relationships (status: code development)
@@ -446,4 +478,7 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 4. Fit models using regularization techniques
 
-5. Fit models using machine learning techniques
+5. Test an environmentally informed spatially explicit model for juvenile abundance using SMURF data and develop approach for including scuba data.
+
+6. Fit models using machine learning techniques
+

@@ -21,7 +21,7 @@ pp_index <- readRDS('Data/Raw_Environmental/pp_indices_WCBTS.rds')%>%
   mutate(PPpjuv=(PP-mean(PP))/sd(PP))%>%
   select(year, PPpjuv)
 
-Beuti_STI<- read.csv('Data/Raw_Environmental/beuti_sti.csv')%>%
+Beuti_STI<- read.csv('data-yellowtail/Raw_Environmental/beuti_sti.csv')%>%
   select(X, X45N, X46N, X47N)%>%
   pivot_longer(cols=-X,names_to='location', values_to='BeutiSTI')%>%
   group_by(X)%>%
@@ -85,7 +85,7 @@ corrplot.mixed(cor(na.omit(CUTI_corr)), lower = 'circle', upper = 'number')
 
 bakun_sti<- read.csv('data-yellowtail/Raw_Environmental/bakun_sti.csv')%>%
   select(-time)%>%
-  filter(lat!=42)%>%
+  filter(lat==45)%>%
   #pivot_wider(names_from = lat,values_from = bakun_sti)%>%
   group_by(year)%>%
   dplyr::summarise(bakun_sti=mean(bakun_sti))%>%
@@ -94,4 +94,5 @@ bakun_sti<- read.csv('data-yellowtail/Raw_Environmental/bakun_sti.csv')%>%
 combine_data<-read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv")%>%
   left_join(bakun_sti)
 write.csv(combine_data,"data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv")
+write.csv(CUTI_STI%>%left_join(bakun_sti),"data-yellowtail/upwellingts.csv")
 
