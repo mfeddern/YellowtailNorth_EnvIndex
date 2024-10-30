@@ -7,28 +7,30 @@ format:
     html-math-method: katex
     css: styles.css
 ---
+
 ## Background
+
 The northern Yellowtail STAT has identified 3 primary ways that the incorporation and evaluation of environmental indices could be improved upon for the 2025 assessment cycle, these include:
 
-1. Expand on non-linear relationships considered between recruitment deviations and environmental responses, specifically, evaluate the benefit of using GAMs in addition to quadratic terms.
+1.  Expand on non-linear relationships considered between recruitment deviations and environmental responses, specifically, evaluate the benefit of using GAMs in addition to quadratic terms.
 
-2. Compare predictive capacity of models (using Leave-Future-Out cross validation) in addition to model fit.
+2.  Compare predictive capacity of models (using Leave-Future-Out cross validation) in addition to model fit.
 
-3. Consider time-varying relationships (non-stationarity) between environmental conditions and recruitment deviations.
+3.  Consider time-varying relationships (non-stationarity) between environmental conditions and recruitment deviations.
 
-4. Fitting models to recrutitment deviations from the base model and refitting with an environmental predictor has inherent circularity. Identifying additional indices that can be environmentally informed would benefit the process of developing environmentally informed assessments. These could include indices of juvenile abundance, growth, or maturity.
+4.  Fitting models to recrutitment deviations from the base model and refitting with an environmental predictor has inherent circularity. Identifying additional indices that can be environmentally informed would benefit the process of developing environmentally informed assessments. These could include indices of juvenile abundance, growth, or maturity.
 
-5. Methods for index selection currently include fitting all possible model combintations. Issues of multicollinearity and model fitting are challenging across assessment types (i.e. both groundfish and salmon struggle with this). Evaluating additional approaches to deal with both multicollinearity and variable selection that also can deal with extremely limited time series would be beneficial. These can include regularization and machine learning methods. 
+5.  Methods for index selection currently include fitting all possible model combintations. Issues of multicollinearity and model fitting are challenging across assessment types (i.e. both groundfish and salmon struggle with this). Evaluating additional approaches to deal with both multicollinearity and variable selection that also can deal with extremely limited time series would be beneficial. These can include regularization and machine learning methods.
 
 These efforts are in addition to the work lead by Nick Tolmieri and Amanda Darby which
 
-1. Generated a ecological profile for Yellowtail north based on life history information
+1.  Generated a ecological profile for Yellowtail north based on life history information
 
-2. Compared linear models including quadratic terms where aappropriate and omitting highly correlated predictors from the same model
+2.  Compared linear models including quadratic terms where aappropriate and omitting highly correlated predictors from the same model
 
-3. Found the model with the best fit to the data using AIC and principles of parsimony
+3.  Found the model with the best fit to the data using AIC and principles of parsimony
 
-4. Evaluated model performance using jack knifing and predicting the last 4 years of data.
+4.  Evaluated model performance using jack knifing and predicting the last 4 years of data.
 
 ## Code set up
 
@@ -250,9 +252,9 @@ arranged
 
 ### Assessing the weight of support for each predictor as a function of time series length
 
-Next we can look at the weight of evidence in support for each time series and consider how this might change based on the observed time period of recruitment deviations. For this approach we will dredge up to 5 covariates, we will consider quadratic terms, and omit combinations of highly correlated covariates. This is not to expressly identify "THE" model but as an exercise to identify the most important variables, and potential non-stationarities in that relationship. To fit these models we will use at least 10 years of data (1994 - 2004) and iteratively add in one year of data and refit the model set. Colors denote the over all aic weight across all models with that variable. 
+Next we can look at the weight of evidence in support for each time series and consider how this might change based on the observed time period of recruitment deviations. For this approach we will dredge up to 5 covariates, we will consider quadratic terms, and omit combinations of highly correlated covariates. This is not to expressly identify "THE" model but as an exercise to identify the most important variables, and potential non-stationarities in that relationship. To fit these models we will use at least 10 years of data (1994 - 2004) and iteratively add in one year of data and refit the model set. Colors denote the over all aic weight across all models with that variable.
 
-Two variables stand out, CUTI spring transition as a non-linear (quadratic) relationship and ONI during the preconditioning time period. Notably, the weight of evidence for a single time series really diminshes when when the model is fit to 1994 - 2011:2014 such that AIC is fairly distributed across time series. 
+Two variables stand out, CUTI spring transition as a non-linear (quadratic) relationship and ONI during the preconditioning time period. Notably, the weight of evidence for a single time series really diminshes when when the model is fit to 1994 - 2011:2014 such that AIC is fairly distributed across time series.
 
 ```{r}
 #| echo: false
@@ -267,7 +269,7 @@ p
 
 ```
 
-If we try to fit a model that is highly parsimonious, by fitting only 1 covariate at a time in the same framework (or selecting the most parsimonious model) we get a different answer and find that Mixed layer depth during the larval lifestage is the most important. I find this result interesting because MLDlarv does not load onto our DFA significantly. Given all of this variability, its worth exploring these different models a bit more. 
+If we try to fit a model that is highly parsimonious, by fitting only 1 covariate at a time in the same framework (or selecting the most parsimonious model) we get a different answer and find that Mixed layer depth during the larval lifestage is the most important. I find this result interesting because MLDlarv does not load onto our DFA significantly. Given all of this variability, its worth exploring these different models a bit more.
 
 ```{r}
 #| echo: false
@@ -284,7 +286,7 @@ p
 
 ### Assessing model selection based on AIC and principles of parsimony
 
-Lets take a look at what the best models from Amanda and Nicks workflow looks like. If we assign the best model as the model with the lowest AIC we also identify the MLDlarv model. However, this model has an extremely low R^2 and also does not fit the most recent half of the time series. 
+Lets take a look at what the best models from Amanda and Nicks workflow looks like. If we assign the best model as the model with the lowest AIC we also identify the MLDlarv model. However, this model has an extremely low R\^2 and also does not fit the most recent half of the time series.
 
 ```{r}
 #| echo: false
@@ -307,7 +309,7 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 ```
 
-Now what if we relax teh requirement of having the most parsimonious model and instead focus on the best fit across the entire time series, we find the best model is CUTI STI with a quadratic term. 
+Now what if we relax teh requirement of having the most parsimonious model and instead focus on the best fit across the entire time series, we find the best model is CUTI STI with a quadratic term.
 
 ```{r}
 #| echo: false
@@ -330,7 +332,8 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 ```
 
-We can also look at a table of the best models. It becomes very apparent the top models include CUTI STI as a non-linear term, and the models that include it have much better R^2 values. 
+We can also look at a table of the best models. It becomes very apparent the top models include CUTI STI as a non-linear term, and the models that include it have much better R\^2 values.
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -343,7 +346,7 @@ knitr::kable(mtable_best, format="html")
 
 ### Considering correlation across covariates with the strongest weights of evidence
 
-Using the first framework we look at, we can take the entire time series through 2014, and look at what predictors have the most evidence of support. Lets say that we only want to look at predictors that have at least 15% of the model support for the full time series. Looking at the data  this way, the covariates that have the best weight of evidence are: long shore transport (larv), ONI (pelagic juveniles, larval, and preconditioning), CUTI STI, degree days benthic juveniles, and mixed layer depth larval.
+Using the first framework we look at, we can take the entire time series through 2014, and look at what predictors have the most evidence of support. Lets say that we only want to look at predictors that have at least 15% of the model support for the full time series. Looking at the data this way, the covariates that have the best weight of evidence are: long shore transport (larv), ONI (pelagic juveniles, larval, and preconditioning), CUTI STI, degree days benthic juveniles, and mixed layer depth larval.
 
 ```{r}
 #| echo: false
@@ -369,7 +372,8 @@ corrplot.mixed(corrplotsat)
 
 ```
 
-ONIlarv is correlated with a bunch of covariates. Lets ditch it. 
+ONIlarv is correlated with a bunch of covariates. Lets ditch it.
+
 ```{r}
 #| echo: false
 #| warning: false
@@ -386,17 +390,21 @@ corrplot.mixed(corrplotsat)
 ```
 
 And finally, what does this model look like? We get a slightly worse fit than just using upwelling, and we still struggle with overestimating recruitment when it is low (the negative values)
+
 ```{r}
 #| echo: false
 #| warning: false
+the_lm2 <-  lm(Y_rec ~  LSTlarv + ONIpjuv + 
+    ONIpre  + CutiSTIpjuv+I(CutiSTIpjuv^2) + MLDpjuv + DDben, data=data_1)
 bf_mod = eval(the_lm2$call[[2]])
+#summary(the_lm2)
 df_index = predict_best_fit(old_data=data_1, new_data=df, bf_mod=bf_mod)
 
 ggplot(df_index, aes(x=year, y=fit)) + 
   geom_ribbon(data=df_index, aes(ymin = fit-1.96*se, ymax = fit+1.96*se), 
               color='grey', alpha = 0.05) + 
   geom_line() + 
-  ggtitle(bf_mod,paste("R2 =", 0.31))+
+  ggtitle(bf_mod,paste("R2 =", 0.40))+
   xlab("Year") + ylab('ln (rec devs)') + 
   geom_point(aes(year,Y_rec)) + 
   scale_x_continuous(breaks=seq(1995,2025,5) , minor_breaks = 1993:max(df$year)) + 
@@ -470,15 +478,14 @@ summary(lm(CutiSTIpjuv~ROMS,data=up))
 
 ## Next steps
 
-1. Fit GAMs with temporally stable relationships (status: code development)
+1.  Fit GAMs with temporally stable relationships (status: code development)
 
-2. Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity
+2.  Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity
 
-3. Perform model selection using LFO-CV (status: code development)
+3.  Perform model selection using LFO-CV (status: code development)
 
-4. Fit models using regularization techniques
+4.  Fit models using regularization techniques
 
-5. Test an environmentally informed spatially explicit model for juvenile abundance using SMURF data and develop approach for including scuba data.
+5.  Test an environmentally informed spatially explicit model for juvenile abundance using SMURF data and develop approach for including scuba data.
 
-6. Fit models using machine learning techniques
-
+6.  Fit models using machine learning techniques
