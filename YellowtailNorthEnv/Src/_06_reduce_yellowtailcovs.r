@@ -5,180 +5,6 @@ library(data.table) # faster writing of large files
 library(lubridate)
 library(mgcv)
 library(MuMIn)
-
-source("Src/_00_yellowtail-header.r")
-source("Src/Functions-for-envir-index.r")
-# set directories ##############################################################
-
-# bring in data ################################################################
-# combined fish and environmental drivers file
-df = data.frame(read.csv(paste0(data_dir,"DATA_Combined_glorys_yellowtail.csv"), header = T))
-
-# get predictors to create model formula #######################################
-envir_data = df %>%  # drop terms not in model statement
-  dplyr::select(!any_of(c('year','sd','Y_rec','ZOOpjuv','ZOOben')))%>%  # drop terms not in model statement
-  dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI')))%>% 
-  mutate_all(~ scale(.))
-head(envir_data)
-dim(envir_data)
-data_years = 1994:2014
-
-envir_data2<- envir_data[complete.cases(envir_data), ]
-data.pca <- princomp(envir_data2)
-summary(data.pca)
-
-# build model - full formula ###################################################
-quadratic_terms = c('LSTlarv','ONIpre','ONIlarv', 'CutiSTIpjuv')
-
-form_dredge = make_dredge_equation(envir_data = envir_data, quadratic_vars = quadratic_terms)
-form_dredge
-# save out for model testing later
-saveRDS(form_dredge, paste0(results_dir,"formula_for_dredge.rds"))
-
-# Final data preparation #######################################################
-# remove ZOO terms because they miss two years; model can't run with NAs
-
-data_1 = df %>% 
-  dplyr::select(!any_of( c('ZOOpjuv', 'ZOOben')))  %>% 
-  filter(year %in% data_years)
-
-######## RUN DREDGE ##############################################################
-
-fit = lm(form_dredge, data=data_1, na.action = na.fail)
-
-# dredge_text
-# write as a function to use in model testing later
-fit_dredge <- function(fit){
-  fit = fit
-  mtable = dredge(fit, rank = AICc, m.lim = c(NA,3),
-                  subset= # block correlated terms from the model
-                    !(CutiSTIpjuv && BeutiSTIpjuv) && 
-                    #!(DDben && ZOOben) && 
-                    !(DDlarv && DDpjuv) && 
-                    !(DDlarv && HCIlarv) && 
-                    !(DDlarv && ONIlarv) && 
-                    !(DDlarv && PDOlarv) && 
-                    !(DDlarv && Tpart) && 
-                    #!(DDlarv && ZOOpjuv) && 
-                    !(DDpjuv && HCIlarv) && 
-                    !(DDpjuv && HCIpjuv) && 
-                    !(DDpjuv && PDOlarv) && 
-                    !(DDpjuv && PDOpjuv) && 
-                    !(DDpjuv && Tpart) && 
-                    #!(DDpjuv && ZOOpjuv) && 
-                    !(DDpre && DDegg) && 
-                    !(DDpre && DDlarv) && 
-                    !(DDpre && HCIlarv) &&
-                    !(DDpre && PDOlarv) && 
-                    !(DDpre && Tcop) && 
-                    !(DDpre && Tpart) && 
-                    #!(DDpre && ZOOpjuv) && 
-                    !(HCIlarv && PDOlarv) && 
-                    !(HCIpjuv && PDOpjuv) && 
-                    !(MLDpart && MLDlarv) && 
-                    !(ONIlarv && PDOlarv) && 
-                    !(ONIpre && ONIlarv) && 
-                    #!(PDOlarv && ZOOpjuv) && 
-                    !(Tpart && HCIlarv) && 
-                    !(Tpart && PDOlarv) && 
-                    #!(Tpart && ZOOpjuv) &&
-                    dc(LSTlarv, I(LSTlarv^2)) &&
-                    dc(ONIpre, I(ONIpre^2)) &&
-                    dc(ONIlarv, I(ONIlarv^2)) &&
-                    dc(CutiSTIpjuv, I(CutiSTIpjuv^2)),
-                  extra = list(R2 = function(x)
-                    summary(x)$r.squared[[1]], 
-                    F = function(y)
-                      summary(y)$fstatistic[[1]]),
-                  trace=2 )
-  
-  return(mtable)
-}
-
-# output the dredge function to use in model testing
-saveRDS(fit_dredge, paste0(results_dir,"fit_dredge.rds"))
-
-# run dredge and fit models using function ####################################
-mtable = fit_dredge(fit)
-
-mtable4 = subset(mtable, delta<4)
-print(mtable4, abbrev.names = FALSE)
-
-saveRDS( mtable, file=paste0(results_dir,'Table_dredge-model-fits.rds'))
-fwrite(mtable,paste0(results_dir,"Table_dredge-aic-delta4.csv"))
-mtable = readRDS(paste0(results_dir,'Table_dredge-model-fits.rds') )
-
-# Assess relative AIC support #########################################################
-
-mtable4<-mtable
-sum(mtable$weight)
-mtable4[is.na(mtable4)] <- 0
-param_names<-colnames(mtable2)[31:2]
-AICcTab=NA
-for(i in 2:31){
-  AICweight =NA
-  for(j in 1:nrow(mtable4)){
-    AICweight = rbind(AICweight,ifelse(mtable4[j,i]!= 0, mtable4[j,37],0))
-  }
-  AICcTab=cbind(AICweight,AICcTab)
-}
-
-
-AICSum<-AICcTab[2:nrow(AICcTab),1:30]
-colnames(AICSum)<-param_names
-
-AICSum2<-data.frame(colSums(AICSum))
-AICsummary<-data.frame(Predictor=param_names,AICWeight=round(AICSum2[,1],3))
-print(AICsummary)
-AICsummary10 <-AICsummary %>%
-  arrange(desc(AICWeight)) %>%  # arrange in descending order
-  slice(2:12)
-
-which_names <- which(names(data_1) %in% AICsummary10$Predictor)
-covs10AIC <- data_1[which_names]
-
-covs10AIC <- covs10AIC[complete.cases(covs10AIC), ]
-M = cor(covs10AIC)
-colSums(abs(M))
-corrplot.mixed(M, order = 'AOE')
-
-
-M2 = cor(covs10AIC%>%select(!MLDpart&!ONIlarv&!PDOpjuv&!LSTlarv&!MLDlarv))
-colSums(abs(M2))
-corrplot.mixed(M2, order = 'AOE')
-
-sat<-lm(Y_rec~CutiSTIpjuv+CutiSTIpjuv^2+DDben+Tcop+ONIpre+ONIpjuv, dat=data_1)
-vif(sat)
-# Refit LMs #########################################################
-data_2<-data_1%>%select(CutiSTIpjuv,DDben,Tcop,ONIpre,ONIpjuv)
-form_dredge = make_dredge_equation(envir_data = data_2, quadratic_vars = "CutiSTIpjuv")
-form_dredge
-fit = lm(form_dredge, data=data_1, na.action = na.fail)
-
-# dredge_text
-# write as a function to use in model testing later
-fit_dredge <- function(fit){
-  fit = fit
-  mtable = dredge(fit, rank = AICc, m.lim = c(NA,5),
-                  
-                  subset=  dc(CutiSTIpjuv, I(CutiSTIpjuv^2)),
-                  extra = list(R2 = function(x)
-                    summary(x)$r.squared[[1]], 
-                    F = function(y)
-                      summary(y)$fstatistic[[1]]),
-                  trace=2 )
-  
-  return(mtable)
-}
-
-mtable = fit_dredge(fit)
-
-mtable4 = subset(mtable, delta<4)
-print(mtable4, abbrev.names = FALSE)
-
-
-
-
 library(tidyverse)
 library(ggplot2)
 library(readr) # faster writing
@@ -193,6 +19,7 @@ library(bayesdfa)
 library(MCMCvis)
 library(stringr)
 library(ggpubr)
+library(car)
 source("Src/_00_yellowtail-header.r")
 source("Src/Functions-for-envir-index.r")
 # set directories ##############################################################
@@ -216,15 +43,16 @@ uncorr<-M%>%filter(corr<0.4&corr> -0.4)
 corrplotdat<-cor(envir_data)
 unique(uncorr$xvar)
 corrplot.mixed(corrplotdat)
-
+data_1 = df %>%  # drop terms not in model statement
+  dplyr::select(!any_of(c('sd','ZOOpjuv','ZOOben')))
+head(envir_data)
+dim(envir_data)
+data_years = 1994:2014
 
   the_lm <-  lm(Y_rec ~ DDpre + DDegg + DDlarv + DDpjuv + DDben + Tcop + Tpart + 
     MLDpart + MLDlarv + MLDpjuv + CSTlarv + CSTpjuv + LSTlarv + 
     LSTpjuv + HCIlarv + HCIpjuv + ONIpre + ONIlarv + ONIpjuv + 
     PDOlarv + PDOpjuv + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv+bakun_sti, data=data_1)
-vif(the_lm)
-
-attributes(alias(fit)$Complete)$dimnames[[1]]
   #Organize SCC biology data
 dat<- df %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI')))
@@ -336,7 +164,7 @@ plot_loadings2 <- function(rotated_modelfit,
 #dat<-dat%>%select(c(year,n4,n3,n1))
 
 
-#### CALCOFI####
+#### DFA FUll ####
 y1calcofi <- 1994
 y2calcofi<- 2021
 n1 <- names(dat)[2:26]
@@ -409,6 +237,79 @@ namescalcofi<-data.frame(names)
 pars = rstan::extract(fit.mod.calcofi$model)
 write_rds(fit.mod.calcofi,'data-yellowtail/fit.mod.calcofi.rds')
 
+
+#### DFA REDUCED ####
+y1calcofi <- 1994
+y2calcofi<- 2021
+n1 <- names(dat%>%select("DDben","Tcop","MLDpart","MLDlarv","MLDpjuv","ONIpre","Tpart","ONIpre","ONIlarv","ONIpjuv","CutiSTIpjuv","CutiTUMIpjuv"))
+dat.calcofi<-dat%>%select(c(year,n1)) #just setting an order so we know how to set the variance index for each survey
+remelt = melt(dat.calcofi,id.vars = "year")
+names(remelt)<-c("year","variable","value")
+Y <- dcast(remelt, variable ~ year)
+names = Y$variable
+Y = as.matrix(Y[,-which(names(Y) == "variable")])
+
+n_chains = 3
+n_iter = 8000
+
+options(mc.cores = parallel::detectCores())
+
+# load environmental covariate data, and average over spring months to have one value per covar per year
+nspp=dim(Y)[1]
+nyear=dim(Y)[2]
+ntrend=1
+n_row=nspp*nyear
+n_row_pro=ntrend*nyear
+var <- c("glorys","glorys", "glorys","glorys","glorys","ONI","glorys","ONI", "ONI", "roms", "roms")
+model_df = expand.grid(estimate_trend_ma = FALSE,
+                       estimate_trend_ar = TRUE, est_nu = TRUE, estimate_process_sigma = FALSE,
+                        num_trends = 1,var_index = var,
+                       elpd_loo = TRUE, se_elpd_loo=NA)
+
+varIndx = c(rep(1,length(n1)))
+varIndx2 <- c("glorys","glorys", "glorys","glorys","glorys","ONI","glorys","ONI", "ONI", "roms", "roms")
+varIndx2 <- c(1,1, 1,1,1,2,1,2, 2, 3,3)
+
+fit.mod.calcofi1 = fit_dfa(y = Y,
+                          num_trends = 1,
+                          iter=n_iter,
+                          varIndx = varIndx,
+                          chains=n_chains, estimate_nu=model_df$est_nu[1],
+                          estimate_trend_ma = model_df$estimate_trend_ma[1],
+                          estimate_trend_ar = model_df$estimate_trend_ar[1],
+                          seed=123)
+
+fit.mod.calcofi2 = fit_dfa(y = Y,
+                           num_trends = 2,
+                           iter=n_iter,
+                           varIndx =varIndx,
+                           chains=n_chains, estimate_nu=model_df$est_nu[1],
+                           estimate_trend_ma = model_df$estimate_trend_ma[1],
+                           estimate_trend_ar = model_df$estimate_trend_ar[1],
+                           seed=123)
+
+
+fit.mod.calcofi3 = fit_dfa(y = Y,
+                           num_trends = 3,
+                           iter=n_iter,
+                           varIndx = varIndx,
+                           chains=n_chains, estimate_nu=model_df$est_nu[1],
+                           estimate_trend_ma = model_df$estimate_trend_ma[1],
+                           estimate_trend_ar = model_df$estimate_trend_ar[1],
+                           seed=123)
+
+is_converged(fit.mod.calcofi1)
+is_converged(fit.mod.calcofi2)
+is_converged(fit.mod.calcofi3)
+
+bayesdfa::loo(fit.mod.calcofi1)
+bayesdfa::loo(fit.mod.calcofi2)
+bayesdfa::loo(fit.mod.calcofi3)
+
+fit.mod.calcofi<-fit.mod.calcofi3
+namescalcofi<-data.frame(names)
+pars = rstan::extract(fit.mod.calcofi$model)
+#write_rds(fit.mod.calcofi,'data-yellowtail/fit.mod.calcofi.rds')
 
 r.calcofi <- rotate_trends(fit.mod.calcofi)
 p.calcofi <- plot_trends2(r.calcofi,years =dat.calcofi$year)
