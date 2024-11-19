@@ -110,9 +110,9 @@ for (i in seq_along(covariates)) {
 
 # filter for frowns only
 
-results <- arrange(results,RMSE )
+results_arr <- arrange(results,RMSE )
 # View the results data frame
-print(results)
+print(results_arr)
 
 # Forloop through model results to plot residuals for each covariate with convex
 # fit
@@ -159,7 +159,7 @@ g3
 
 n_pred <- 4
 train_start<-1
-
+`%notin%` <- Negate(`%in%`)
 n_year <-length(unique(dat$year))
 n_train <- n_year-n_pred 
 predicted<- data.frame()
@@ -176,7 +176,6 @@ for (i in seq_along(covariates)) {
   formula_str <- paste("Y_rec ~ ", smooth_terms)
 predictions <-  numeric(n_pred )
 
-
     # Loop over each observation
     for (k in kstart:n_year) {
       train_index <- setdiff(train_start:n_train, k)  # All indices except the k-th
@@ -184,7 +183,6 @@ predictions <-  numeric(n_pred )
 
       # Fit model on n-k observations
       gam_model <- gam(as.formula(formula_str),
-                       # weights = number_cwt_estimated,
                      data = dat[which(dat$year %notin% unique(dat$year)[k:n_year]), ])
 
       # Predict the excluded observation
@@ -194,7 +192,10 @@ predictions <-  numeric(n_pred )
   }
     # re-fit the model
     gam_model <- gam(as.formula(formula_str),
+                     #data = dat)
                      data = dat[which(dat$year %notin% unique(dat$year)[kstart:n_year]), ])
+        gam_model2 <- gam(as.formula(formula_str),
+                     data = dat)
   # keep in mind RMSE is weird for binomial things
   rmse <- sqrt(mean((dat$Y_rec[kstart:n_year] - predictions[kstart:n_year])^2, na.rm=T))
   r2<-summary(gam_model)$r.sq
@@ -225,41 +226,38 @@ predictions <-  numeric(n_pred )
    print(i)
 }
   
-results <- arrange(results,RMSE )
+results_arr <- arrange(results,RMSE )
 # View the results data frame
-print(results)
+print(results_arr)
 
 # Forloop through model results to plot residuals for each covariate with convex
 # fit
-
+resid_df <- data.frame()
 for(i in 1:length(models)) {
-  if(i==1) {
-    resid_df <- data.frame("fitted" = fitted(models[[i]]),
+ 
+    resid_df_temp <- data.frame("fits" = fitted(models[[i]]),
                            "residuals" = residuals(models[[i]]),
                            "var" = results$var[i],
                            "year"=dat$year[1:kstart-1],
                            "Y_Rec"=dat$Y_rec[1:kstart-1],
                            "sd"=dat$sd[1:kstart-1])
-  } else {
-    resid_df <- rbind(resid_df, data.frame("fitted" = fitted(models[[i]]),
-                                           "residuals" = residuals(models[[i]]),
-                                           "var" = results$var[i],
-                           "year"=dat$year[1:kstart-1],
-                           "Y_Rec"=dat$Y_rec[1:kstart-1],
-                           "sd"=dat$sd[1:kstart-1]))
-  }
+    resid_df<-rbind(resid_df_temp, resid_df)
 }
 predicted<-data.frame(predicted, "year"=dat$year[kstart:n_year], "Y_Rec"=dat$Y_rec[kstart:n_year])
 #resid_df <- resid_df[complete.cases(resid_df),] # we want no missing values
 #resid_df <- resid_df[is.element(resid_df$var, v),]
 
-g2 <- ggplot(resid_df, aes(year,fitted)) +
+g2 <- ggplot(resid_df, aes(year,fits)) +
   geom_line() +
+    geom_ribbon(aes(x=year, y=fits, ymax=fits+sd, ymin=fits-sd), 
+              alpha=0.2)+
   geom_point(data=predicted,aes(x=year,y=Y_Rec),col="red") +
   geom_point(aes(y=Y_Rec))+
   geom_line(data=predicted,aes(x=year,y=pred,col="red"))+
+  
   facet_wrap(~ var, scale="free_x") +
   theme_bw() +
+
   xlab("Year") + ylab("Fitted") +
   theme(strip.text = element_text(size=6),
         strip.background = element_rect(fill="white"))
