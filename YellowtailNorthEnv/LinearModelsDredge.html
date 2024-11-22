@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.553">
+<meta name="generator" content="quarto-1.0.36">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -11,15 +11,10 @@
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
 </style>
 
 
@@ -42,7 +37,7 @@ ul.task-list li input[type="checkbox"] {
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-  <nav id="TOC" role="doc-toc" class="toc-active">
+  <nav id="TOC" role="doc-toc">
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
@@ -55,6 +50,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#assessing-model-selection-based-on-aic-and-principles-of-parsimony" id="toc-assessing-model-selection-based-on-aic-and-principles-of-parsimony" class="nav-link" data-scroll-target="#assessing-model-selection-based-on-aic-and-principles-of-parsimony">Assessing model selection based on AIC and principles of parsimony</a></li>
   <li><a href="#considering-correlation-across-covariates-with-the-strongest-weights-of-evidence" id="toc-considering-correlation-across-covariates-with-the-strongest-weights-of-evidence" class="nav-link" data-scroll-target="#considering-correlation-across-covariates-with-the-strongest-weights-of-evidence">Considering correlation across covariates with the strongest weights of evidence</a></li>
   </ul></li>
+  <li><a href="#univariate-gams" id="toc-univariate-gams" class="nav-link" data-scroll-target="#univariate-gams">Univariate GAMs</a></li>
   <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
   </ul>
 </nav>
@@ -71,14 +67,11 @@ ul.task-list li input[type="checkbox"] {
 <div class="quarto-title-meta">
 
     
-  
     
   </div>
   
 
-
 </header>
-
 
 <section id="background" class="level2">
 <h2 class="anchored" data-anchor-id="background">Background</h2>
@@ -101,7 +94,13 @@ ul.task-list li input[type="checkbox"] {
 <section id="code-set-up" class="level2">
 <h2 class="anchored" data-anchor-id="code-set-up">Code set up</h2>
 <p>First we set up the appropriate packages and references. File paths will be in reference to where the .qmd is saved</p>
+<div class="cell">
+
+</div>
 <p>Next we set up the appropriate directories and read in the data.</p>
+<div class="cell">
+
+</div>
 <p>We can build the functions including quadratic terms and omitting data that are missing years. We pull out DDegg just so we do not exceed the limit of 31 terms - pulling this out was somewhat arbitrary based on Amandas perliminary results.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -111,7 +110,7 @@ ul.task-list li input[type="checkbox"] {
     PDOlarv + PDOpjuv + LUSI + CutiSTIpjuv + CutiTUMIpjuv + BeutiTUMIpjuv + 
     BeutiSTIpjuv + bakun_sti + header + I(LSTlarv^2) + I(ONIpre^2) + 
     I(ONIlarv^2) + I(CutiSTIpjuv^2)
-&lt;environment: 0x130e9c2a0&gt;</code></pre>
+&lt;environment: 0x7fe660f39060&gt;</code></pre>
 </div>
 </div>
 </section>
@@ -122,11 +121,7 @@ ul.task-list li input[type="checkbox"] {
 <p>Before we fit models, lets first understand patterns of correlation and covariability across these environmnetal conditions. To start, lets look at a DFA. We find that across time series, there is a strong underlying trend that is predominantly loaded on by temperature time series and represents transport, mixed layer depth, and upwelling are not as well represented. The model struggles to converge with more than one latent trend.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -136,21 +131,13 @@ ul.task-list li input[type="checkbox"] {
 <p>Two variables stand out, CUTI spring transition as a non-linear (quadratic) relationship and ONI during the preconditioning time period. Notably, the weight of evidence for a single time series really diminshes when when the model is fit to 1994 - 2011:2014 such that AIC is fairly distributed across time series.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>If we try to fit a model that is highly parsimonious, by fitting only 1 covariate at a time in the same framework (or selecting the most parsimonious model) we get a different answer and find that Mixed layer depth during the larval lifestage is the most important. I find this result interesting because MLDlarv does not load onto our DFA significantly. Given all of this variability, its worth exploring these different models a bit more.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -159,113 +146,103 @@ ul.task-list li input[type="checkbox"] {
 <p>Lets take a look at what the best models from Amanda and Nicks workflow looks like. If we assign the best model as the model with the lowest AIC we also identify the MLDlarv model. However, this model has an extremely low R^2 and also does not fit the most recent half of the time series.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>Now what if we relax teh requirement of having the most parsimonious model and instead focus on the best fit across the entire time series, we find the best model is CUTI STI with a quadratic term.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>We can also look at a table of the best models. It becomes very apparent the top models include CUTI STI as a non-linear term, and the models that include it have much better R^2 values.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: right;" data-quarto-table-cell-role="th">CutiSTIpjuv</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">I.CutiSTIpjuv.2.</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">DDpre</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">HCIlarv</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">MLDlarv</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Tcop</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">R2</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">AICc</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">delta</th>
-</tr>
-</thead>
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> CutiSTIpjuv </th>
+   <th style="text-align:right;"> I.CutiSTIpjuv.2. </th>
+   <th style="text-align:right;"> DDpre </th>
+   <th style="text-align:right;"> HCIlarv </th>
+   <th style="text-align:right;"> MLDlarv </th>
+   <th style="text-align:right;"> Tcop </th>
+   <th style="text-align:right;"> R2 </th>
+   <th style="text-align:right;"> AICc </th>
+   <th style="text-align:right;"> delta </th>
+  </tr>
+ </thead>
 <tbody>
-<tr class="odd">
-<td style="text-align: right;">-0.22</td>
-<td style="text-align: right;">-0.30</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.37</td>
-<td style="text-align: right;">27.12</td>
-<td style="text-align: right;">0.00</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">-0.23</td>
-<td style="text-align: right;">-0.28</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.21</td>
-<td style="text-align: right;">0.44</td>
-<td style="text-align: right;">28.16</td>
-<td style="text-align: right;">1.04</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.16</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.21</td>
-<td style="text-align: right;">28.79</td>
-<td style="text-align: right;">1.67</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">-0.23</td>
-<td style="text-align: right;">-0.27</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.42</td>
-<td style="text-align: right;">28.90</td>
-<td style="text-align: right;">1.78</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">-0.20</td>
-<td style="text-align: right;">-0.24</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.09</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.41</td>
-<td style="text-align: right;">28.99</td>
-<td style="text-align: right;">1.87</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">-0.26</td>
-<td style="text-align: right;">-0.28</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">-0.32</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">NA</td>
-<td style="text-align: right;">0.41</td>
-<td style="text-align: right;">29.09</td>
-<td style="text-align: right;">1.97</td>
-</tr>
+  <tr>
+   <td style="text-align:right;"> -0.22 </td>
+   <td style="text-align:right;"> -0.30 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.37 </td>
+   <td style="text-align:right;"> 27.12 </td>
+   <td style="text-align:right;"> 0.00 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.23 </td>
+   <td style="text-align:right;"> -0.28 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.21 </td>
+   <td style="text-align:right;"> 0.44 </td>
+   <td style="text-align:right;"> 28.16 </td>
+   <td style="text-align:right;"> 1.04 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.16 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.21 </td>
+   <td style="text-align:right;"> 28.79 </td>
+   <td style="text-align:right;"> 1.67 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.23 </td>
+   <td style="text-align:right;"> -0.27 </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.42 </td>
+   <td style="text-align:right;"> 28.90 </td>
+   <td style="text-align:right;"> 1.78 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.20 </td>
+   <td style="text-align:right;"> -0.24 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.09 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.41 </td>
+   <td style="text-align:right;"> 28.99 </td>
+   <td style="text-align:right;"> 1.87 </td>
+  </tr>
+  <tr>
+   <td style="text-align:right;"> -0.26 </td>
+   <td style="text-align:right;"> -0.28 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> -0.32 </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> NA </td>
+   <td style="text-align:right;"> 0.41 </td>
+   <td style="text-align:right;"> 29.09 </td>
+   <td style="text-align:right;"> 1.97 </td>
+  </tr>
 </tbody>
 </table>
 
-
-</div>
 </div>
 </div>
 </section>
@@ -274,28 +251,26 @@ ul.task-list li input[type="checkbox"] {
 <p>Using the first framework we look at, we can take the entire time series through 2014, and look at what predictors have the most evidence of support. Lets say that we only want to look at predictors that have at least 15% of the model support for the full time series. Looking at the data this way, the covariates that have the best weight of evidence are: long shore transport (larv), ONI (pelagic juveniles, larval, and preconditioning), CUTI STI, degree days benthic juveniles, and mixed layer depth larval.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: right;" data-quarto-table-cell-role="th">last_year</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">variable</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">indicator</th>
-</tr>
-</thead>
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:right;"> last_year </th>
+   <th style="text-align:left;"> variable </th>
+   <th style="text-align:right;"> value </th>
+   <th style="text-align:left;"> indicator </th>
+  </tr>
+ </thead>
 <tbody>
-<tr class="odd">
-<td style="text-align: right;">2014</td>
-<td style="text-align: left;">MLDlarv</td>
-<td style="text-align: right;">0.2060605</td>
-<td style="text-align: left;">MLDla</td>
-</tr>
+  <tr>
+   <td style="text-align:right;"> 2014 </td>
+   <td style="text-align:left;"> MLDlarv </td>
+   <td style="text-align:right;"> 0.2060605 </td>
+   <td style="text-align:left;"> MLDla </td>
+  </tr>
 </tbody>
 </table>
 
-
-</div>
 </div>
 </div>
 <p>Thinking about the variables with the most weight of evidence, we can test out a backwards selection technique. Instead of AIC (which is prone to overfitting and we already know these variables have AIC support) we can use VIF to try and avoid multicollinerity. Lets start with the model that is saturated with the variables that have strong AIC support.</p>
@@ -307,11 +282,7 @@ ul.task-list li input[type="checkbox"] {
        1.88 </code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>ONIlarv is correlated with a bunch of covariates. Lets ditch it.</p>
@@ -321,41 +292,26 @@ ul.task-list li input[type="checkbox"] {
        1.62        2.26        1.25        1.35        1.47        1.88 </code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>And finally, what does this model look like? We get a slightly worse fit than just using upwelling, and we still struggle with overestimating recruitment when it is low (the negative values)</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>We don’t want to use DFA latent trends as predictors because they lack transparency and interpretability - but lets look at it…it is GARBAGE. Why? Likely because it is dominated by temperature and not influenced by the transport, upwelling and mixed layer depth variables that provide better fits. Therefore, even using a DFA would require some degree of covariate exploration for any explanatory power or predictive ability.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-</div>
-<p>The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don’t find that there are significant differences in CUTI STI before and after 2010. TO DO: Touch base with Mike about how CUTI may/may not address ROMS changes.</p>
+<p>The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don’t find that there are significant differences in CUTI STI before and after 2010. Mike Jacox confirmed that there the wind data that CUTI is derived from should be stable from ROMs from at least 2000 onward. He also said he may have CUTI from GLORYs somewhere on his computer (need to follow up).</p>
+<p>From Kiva: “I included all years of”main” recruitment deviations. I would say the information quality goes down around 2010-2011, but you could use anything for playing around.” This may partially explain the lack of consistency after 2010/2011</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>            CutiSTIpjuv bakun_sti
@@ -363,11 +319,7 @@ CutiSTIpjuv   1.0000000 0.5243211
 bakun_sti     0.5243211 1.0000000</code></pre>
 </div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid figure-img" width="672"></p>
-</figure>
-</div>
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
@@ -390,15 +342,590 @@ F-statistic: 0.2858 on 1 and 33 DF,  p-value: 0.5965</code></pre>
 </div>
 </section>
 </section>
+<section id="univariate-gams" class="level2">
+<h2 class="anchored" data-anchor-id="univariate-gams">Univariate GAMs</h2>
+<p>Here I fit univariate GAMs to evaluate the differences in AIC, Leave-One-Out Cross Validation, and Leave-Future-Out Cross Validation. The goal of this preliminary analysis before fitting multivariate GAMs was to examine more closely how different variables perform with particular attention to fits versus predictive capacity. Plotting model fits with a single variable is usedful for understanding which patterns in the data are explained by each variable.</p>
+<p>First, lets look at which models have the most support based on a) AIC, b) LOO-CV, and c) LFO-CV.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> var </th>
+   <th style="text-align:right;"> RMSE_LOO </th>
+   <th style="text-align:right;"> RMSE_LFO </th>
+   <th style="text-align:right;"> AIC_LOO </th>
+   <th style="text-align:right;"> rsq_LOO </th>
+   <th style="text-align:right;"> rsq_LFO </th>
+   <th style="text-align:right;"> dev.ex_LOO </th>
+   <th style="text-align:right;"> dev.ex_LFO </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> CutiSTIpjuv </td>
+   <td style="text-align:right;"> 0.432 </td>
+   <td style="text-align:right;"> 0.389 </td>
+   <td style="text-align:right;"> 24.94231 </td>
+   <td style="text-align:right;"> 0.28 </td>
+   <td style="text-align:right;"> 0.39 </td>
+   <td style="text-align:right;"> 0.3494 </td>
+   <td style="text-align:right;"> 0.4616 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> LSTlarv </td>
+   <td style="text-align:right;"> 0.433 </td>
+   <td style="text-align:right;"> 0.210 </td>
+   <td style="text-align:right;"> 27.62118 </td>
+   <td style="text-align:right;"> 0.18 </td>
+   <td style="text-align:right;"> 0.15 </td>
+   <td style="text-align:right;"> 0.2562 </td>
+   <td style="text-align:right;"> 0.2382 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLDlarv </td>
+   <td style="text-align:right;"> 0.436 </td>
+   <td style="text-align:right;"> 0.328 </td>
+   <td style="text-align:right;"> 27.37569 </td>
+   <td style="text-align:right;"> 0.16 </td>
+   <td style="text-align:right;"> 0.23 </td>
+   <td style="text-align:right;"> 0.2052 </td>
+   <td style="text-align:right;"> 0.3036 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDpre </td>
+   <td style="text-align:right;"> 0.460 </td>
+   <td style="text-align:right;"> 0.210 </td>
+   <td style="text-align:right;"> 29.95140 </td>
+   <td style="text-align:right;"> 0.05 </td>
+   <td style="text-align:right;"> 0.03 </td>
+   <td style="text-align:right;"> 0.1015 </td>
+   <td style="text-align:right;"> 0.0931 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Tcop </td>
+   <td style="text-align:right;"> 0.462 </td>
+   <td style="text-align:right;"> 0.245 </td>
+   <td style="text-align:right;"> 30.18503 </td>
+   <td style="text-align:right;"> 0.04 </td>
+   <td style="text-align:right;"> 0.04 </td>
+   <td style="text-align:right;"> 0.0915 </td>
+   <td style="text-align:right;"> 0.0963 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLDpart </td>
+   <td style="text-align:right;"> 0.473 </td>
+   <td style="text-align:right;"> 0.293 </td>
+   <td style="text-align:right;"> 28.64629 </td>
+   <td style="text-align:right;"> 0.11 </td>
+   <td style="text-align:right;"> 0.13 </td>
+   <td style="text-align:right;"> 0.1556 </td>
+   <td style="text-align:right;"> 0.1874 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDegg </td>
+   <td style="text-align:right;"> 0.479 </td>
+   <td style="text-align:right;"> 0.266 </td>
+   <td style="text-align:right;"> 31.09455 </td>
+   <td style="text-align:right;"> 0.00 </td>
+   <td style="text-align:right;"> 0.00 </td>
+   <td style="text-align:right;"> 0.0512 </td>
+   <td style="text-align:right;"> 0.0636 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> X </td>
+   <td style="text-align:right;"> 0.482 </td>
+   <td style="text-align:right;"> 0.295 </td>
+   <td style="text-align:right;"> 30.19527 </td>
+   <td style="text-align:right;"> 0.06 </td>
+   <td style="text-align:right;"> 0.04 </td>
+   <td style="text-align:right;"> 0.1178 </td>
+   <td style="text-align:right;"> 0.1013 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> ONIpjuv </td>
+   <td style="text-align:right;"> 0.483 </td>
+   <td style="text-align:right;"> 0.309 </td>
+   <td style="text-align:right;"> 30.48603 </td>
+   <td style="text-align:right;"> 0.03 </td>
+   <td style="text-align:right;"> 0.06 </td>
+   <td style="text-align:right;"> 0.0783 </td>
+   <td style="text-align:right;"> 0.1153 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDlarv </td>
+   <td style="text-align:right;"> 0.484 </td>
+   <td style="text-align:right;"> 0.218 </td>
+   <td style="text-align:right;"> 31.01117 </td>
+   <td style="text-align:right;"> 0.01 </td>
+   <td style="text-align:right;"> -0.02 </td>
+   <td style="text-align:right;"> 0.0550 </td>
+   <td style="text-align:right;"> 0.0456 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> PDOpjuv </td>
+   <td style="text-align:right;"> 0.486 </td>
+   <td style="text-align:right;"> 0.349 </td>
+   <td style="text-align:right;"> 31.75613 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> 0.01 </td>
+   <td style="text-align:right;"> 0.0209 </td>
+   <td style="text-align:right;"> 0.0697 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Tpart </td>
+   <td style="text-align:right;"> 0.491 </td>
+   <td style="text-align:right;"> 0.220 </td>
+   <td style="text-align:right;"> 31.30430 </td>
+   <td style="text-align:right;"> -0.01 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> 0.0417 </td>
+   <td style="text-align:right;"> 0.0331 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HCIlarv </td>
+   <td style="text-align:right;"> 0.493 </td>
+   <td style="text-align:right;"> 0.217 </td>
+   <td style="text-align:right;"> 31.45804 </td>
+   <td style="text-align:right;"> -0.02 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> 0.0347 </td>
+   <td style="text-align:right;"> 0.0240 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CutiTUMIpjuv </td>
+   <td style="text-align:right;"> 0.493 </td>
+   <td style="text-align:right;"> 0.262 </td>
+   <td style="text-align:right;"> 32.18672 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0006 </td>
+   <td style="text-align:right;"> 0.0072 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDben </td>
+   <td style="text-align:right;"> 0.498 </td>
+   <td style="text-align:right;"> 0.238 </td>
+   <td style="text-align:right;"> 31.87787 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> 0.0152 </td>
+   <td style="text-align:right;"> 0.0128 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> ONIpre </td>
+   <td style="text-align:right;"> 0.499 </td>
+   <td style="text-align:right;"> 0.463 </td>
+   <td style="text-align:right;"> 29.86055 </td>
+   <td style="text-align:right;"> 0.09 </td>
+   <td style="text-align:right;"> 0.23 </td>
+   <td style="text-align:right;"> 0.1665 </td>
+   <td style="text-align:right;"> 0.3226 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> dfa </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 0.222 </td>
+   <td style="text-align:right;"> 31.73622 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> 0.0218 </td>
+   <td style="text-align:right;"> 0.0124 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> LSTpjuv </td>
+   <td style="text-align:right;"> 0.501 </td>
+   <td style="text-align:right;"> 0.261 </td>
+   <td style="text-align:right;"> 32.18613 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0006 </td>
+   <td style="text-align:right;"> 0.0069 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BeutiTUMIpjuv </td>
+   <td style="text-align:right;"> 0.502 </td>
+   <td style="text-align:right;"> 0.231 </td>
+   <td style="text-align:right;"> 31.98426 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0102 </td>
+   <td style="text-align:right;"> 0.0058 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> PDOlarv </td>
+   <td style="text-align:right;"> 0.504 </td>
+   <td style="text-align:right;"> 0.203 </td>
+   <td style="text-align:right;"> 31.25609 </td>
+   <td style="text-align:right;"> -0.01 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> 0.0439 </td>
+   <td style="text-align:right;"> 0.0272 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BeutiSTIpjuv </td>
+   <td style="text-align:right;"> 0.506 </td>
+   <td style="text-align:right;"> 0.275 </td>
+   <td style="text-align:right;"> 31.20045 </td>
+   <td style="text-align:right;"> 0.02 </td>
+   <td style="text-align:right;"> 0.05 </td>
+   <td style="text-align:right;"> 0.0943 </td>
+   <td style="text-align:right;"> 0.1483 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDpjuv </td>
+   <td style="text-align:right;"> 0.516 </td>
+   <td style="text-align:right;"> 0.237 </td>
+   <td style="text-align:right;"> 32.11044 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.07 </td>
+   <td style="text-align:right;"> 0.0042 </td>
+   <td style="text-align:right;"> 0.0005 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HCIpjuv </td>
+   <td style="text-align:right;"> 0.516 </td>
+   <td style="text-align:right;"> 0.253 </td>
+   <td style="text-align:right;"> 31.86014 </td>
+   <td style="text-align:right;"> -0.02 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> 0.0513 </td>
+   <td style="text-align:right;"> 0.0224 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CSTlarv </td>
+   <td style="text-align:right;"> 0.526 </td>
+   <td style="text-align:right;"> 0.248 </td>
+   <td style="text-align:right;"> 32.19784 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.07 </td>
+   <td style="text-align:right;"> 0.0001 </td>
+   <td style="text-align:right;"> 0.0006 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLDpjuv </td>
+   <td style="text-align:right;"> 0.531 </td>
+   <td style="text-align:right;"> 0.240 </td>
+   <td style="text-align:right;"> 32.13528 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0030 </td>
+   <td style="text-align:right;"> 0.0026 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CSTpjuv </td>
+   <td style="text-align:right;"> 0.550 </td>
+   <td style="text-align:right;"> 0.581 </td>
+   <td style="text-align:right;"> 31.94132 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> 0.12 </td>
+   <td style="text-align:right;"> 0.0406 </td>
+   <td style="text-align:right;"> 0.2202 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+<div class="cell-output-display">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> var </th>
+   <th style="text-align:right;"> RMSE_LOO </th>
+   <th style="text-align:right;"> RMSE_LFO </th>
+   <th style="text-align:right;"> AIC_LOO </th>
+   <th style="text-align:right;"> rsq_LOO </th>
+   <th style="text-align:right;"> rsq_LFO </th>
+   <th style="text-align:right;"> dev.ex_LOO </th>
+   <th style="text-align:right;"> dev.ex_LFO </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> PDOlarv </td>
+   <td style="text-align:right;"> 0.504 </td>
+   <td style="text-align:right;"> 0.203 </td>
+   <td style="text-align:right;"> 31.25609 </td>
+   <td style="text-align:right;"> -0.01 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> 0.0439 </td>
+   <td style="text-align:right;"> 0.0272 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> LSTlarv </td>
+   <td style="text-align:right;"> 0.433 </td>
+   <td style="text-align:right;"> 0.210 </td>
+   <td style="text-align:right;"> 27.62118 </td>
+   <td style="text-align:right;"> 0.18 </td>
+   <td style="text-align:right;"> 0.15 </td>
+   <td style="text-align:right;"> 0.2562 </td>
+   <td style="text-align:right;"> 0.2382 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDpre </td>
+   <td style="text-align:right;"> 0.460 </td>
+   <td style="text-align:right;"> 0.210 </td>
+   <td style="text-align:right;"> 29.95140 </td>
+   <td style="text-align:right;"> 0.05 </td>
+   <td style="text-align:right;"> 0.03 </td>
+   <td style="text-align:right;"> 0.1015 </td>
+   <td style="text-align:right;"> 0.0931 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HCIlarv </td>
+   <td style="text-align:right;"> 0.493 </td>
+   <td style="text-align:right;"> 0.217 </td>
+   <td style="text-align:right;"> 31.45804 </td>
+   <td style="text-align:right;"> -0.02 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> 0.0347 </td>
+   <td style="text-align:right;"> 0.0240 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDlarv </td>
+   <td style="text-align:right;"> 0.484 </td>
+   <td style="text-align:right;"> 0.218 </td>
+   <td style="text-align:right;"> 31.01117 </td>
+   <td style="text-align:right;"> 0.01 </td>
+   <td style="text-align:right;"> -0.02 </td>
+   <td style="text-align:right;"> 0.0550 </td>
+   <td style="text-align:right;"> 0.0456 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Tpart </td>
+   <td style="text-align:right;"> 0.491 </td>
+   <td style="text-align:right;"> 0.220 </td>
+   <td style="text-align:right;"> 31.30430 </td>
+   <td style="text-align:right;"> -0.01 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> 0.0417 </td>
+   <td style="text-align:right;"> 0.0331 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> dfa </td>
+   <td style="text-align:right;"> 0.500 </td>
+   <td style="text-align:right;"> 0.222 </td>
+   <td style="text-align:right;"> 31.73622 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> 0.0218 </td>
+   <td style="text-align:right;"> 0.0124 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BeutiTUMIpjuv </td>
+   <td style="text-align:right;"> 0.502 </td>
+   <td style="text-align:right;"> 0.231 </td>
+   <td style="text-align:right;"> 31.98426 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0102 </td>
+   <td style="text-align:right;"> 0.0058 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDpjuv </td>
+   <td style="text-align:right;"> 0.516 </td>
+   <td style="text-align:right;"> 0.237 </td>
+   <td style="text-align:right;"> 32.11044 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.07 </td>
+   <td style="text-align:right;"> 0.0042 </td>
+   <td style="text-align:right;"> 0.0005 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDben </td>
+   <td style="text-align:right;"> 0.498 </td>
+   <td style="text-align:right;"> 0.238 </td>
+   <td style="text-align:right;"> 31.87787 </td>
+   <td style="text-align:right;"> -0.04 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> 0.0152 </td>
+   <td style="text-align:right;"> 0.0128 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLDpjuv </td>
+   <td style="text-align:right;"> 0.531 </td>
+   <td style="text-align:right;"> 0.240 </td>
+   <td style="text-align:right;"> 32.13528 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0030 </td>
+   <td style="text-align:right;"> 0.0026 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Tcop </td>
+   <td style="text-align:right;"> 0.462 </td>
+   <td style="text-align:right;"> 0.245 </td>
+   <td style="text-align:right;"> 30.18503 </td>
+   <td style="text-align:right;"> 0.04 </td>
+   <td style="text-align:right;"> 0.04 </td>
+   <td style="text-align:right;"> 0.0915 </td>
+   <td style="text-align:right;"> 0.0963 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CSTlarv </td>
+   <td style="text-align:right;"> 0.526 </td>
+   <td style="text-align:right;"> 0.248 </td>
+   <td style="text-align:right;"> 32.19784 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.07 </td>
+   <td style="text-align:right;"> 0.0001 </td>
+   <td style="text-align:right;"> 0.0006 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> HCIpjuv </td>
+   <td style="text-align:right;"> 0.516 </td>
+   <td style="text-align:right;"> 0.253 </td>
+   <td style="text-align:right;"> 31.86014 </td>
+   <td style="text-align:right;"> -0.02 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> 0.0513 </td>
+   <td style="text-align:right;"> 0.0224 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> LSTpjuv </td>
+   <td style="text-align:right;"> 0.501 </td>
+   <td style="text-align:right;"> 0.261 </td>
+   <td style="text-align:right;"> 32.18613 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0006 </td>
+   <td style="text-align:right;"> 0.0069 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CutiTUMIpjuv </td>
+   <td style="text-align:right;"> 0.493 </td>
+   <td style="text-align:right;"> 0.262 </td>
+   <td style="text-align:right;"> 32.18672 </td>
+   <td style="text-align:right;"> -0.05 </td>
+   <td style="text-align:right;"> -0.06 </td>
+   <td style="text-align:right;"> 0.0006 </td>
+   <td style="text-align:right;"> 0.0072 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> DDegg </td>
+   <td style="text-align:right;"> 0.479 </td>
+   <td style="text-align:right;"> 0.266 </td>
+   <td style="text-align:right;"> 31.09455 </td>
+   <td style="text-align:right;"> 0.00 </td>
+   <td style="text-align:right;"> 0.00 </td>
+   <td style="text-align:right;"> 0.0512 </td>
+   <td style="text-align:right;"> 0.0636 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> BeutiSTIpjuv </td>
+   <td style="text-align:right;"> 0.506 </td>
+   <td style="text-align:right;"> 0.275 </td>
+   <td style="text-align:right;"> 31.20045 </td>
+   <td style="text-align:right;"> 0.02 </td>
+   <td style="text-align:right;"> 0.05 </td>
+   <td style="text-align:right;"> 0.0943 </td>
+   <td style="text-align:right;"> 0.1483 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLDpart </td>
+   <td style="text-align:right;"> 0.473 </td>
+   <td style="text-align:right;"> 0.293 </td>
+   <td style="text-align:right;"> 28.64629 </td>
+   <td style="text-align:right;"> 0.11 </td>
+   <td style="text-align:right;"> 0.13 </td>
+   <td style="text-align:right;"> 0.1556 </td>
+   <td style="text-align:right;"> 0.1874 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> X </td>
+   <td style="text-align:right;"> 0.482 </td>
+   <td style="text-align:right;"> 0.295 </td>
+   <td style="text-align:right;"> 30.19527 </td>
+   <td style="text-align:right;"> 0.06 </td>
+   <td style="text-align:right;"> 0.04 </td>
+   <td style="text-align:right;"> 0.1178 </td>
+   <td style="text-align:right;"> 0.1013 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> ONIpjuv </td>
+   <td style="text-align:right;"> 0.483 </td>
+   <td style="text-align:right;"> 0.309 </td>
+   <td style="text-align:right;"> 30.48603 </td>
+   <td style="text-align:right;"> 0.03 </td>
+   <td style="text-align:right;"> 0.06 </td>
+   <td style="text-align:right;"> 0.0783 </td>
+   <td style="text-align:right;"> 0.1153 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MLDlarv </td>
+   <td style="text-align:right;"> 0.436 </td>
+   <td style="text-align:right;"> 0.328 </td>
+   <td style="text-align:right;"> 27.37569 </td>
+   <td style="text-align:right;"> 0.16 </td>
+   <td style="text-align:right;"> 0.23 </td>
+   <td style="text-align:right;"> 0.2052 </td>
+   <td style="text-align:right;"> 0.3036 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> PDOpjuv </td>
+   <td style="text-align:right;"> 0.486 </td>
+   <td style="text-align:right;"> 0.349 </td>
+   <td style="text-align:right;"> 31.75613 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> 0.01 </td>
+   <td style="text-align:right;"> 0.0209 </td>
+   <td style="text-align:right;"> 0.0697 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CutiSTIpjuv </td>
+   <td style="text-align:right;"> 0.432 </td>
+   <td style="text-align:right;"> 0.389 </td>
+   <td style="text-align:right;"> 24.94231 </td>
+   <td style="text-align:right;"> 0.28 </td>
+   <td style="text-align:right;"> 0.39 </td>
+   <td style="text-align:right;"> 0.3494 </td>
+   <td style="text-align:right;"> 0.4616 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> ONIpre </td>
+   <td style="text-align:right;"> 0.499 </td>
+   <td style="text-align:right;"> 0.463 </td>
+   <td style="text-align:right;"> 29.86055 </td>
+   <td style="text-align:right;"> 0.09 </td>
+   <td style="text-align:right;"> 0.23 </td>
+   <td style="text-align:right;"> 0.1665 </td>
+   <td style="text-align:right;"> 0.3226 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> CSTpjuv </td>
+   <td style="text-align:right;"> 0.550 </td>
+   <td style="text-align:right;"> 0.581 </td>
+   <td style="text-align:right;"> 31.94132 </td>
+   <td style="text-align:right;"> -0.03 </td>
+   <td style="text-align:right;"> 0.12 </td>
+   <td style="text-align:right;"> 0.0406 </td>
+   <td style="text-align:right;"> 0.2202 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<p>We find that the models supported with AIC and LOO-CV are very consistent and agree with the linear models, but LFO-CV is a bit of a mess. Lets look at the model fits for the full time series:</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="LinearModelsDredge_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="1056"></p>
+</div>
+</div>
+<p>Looking at this, it becomes pretty obvious that the variables with the most support are not necessarily the ones that predict whether recruitment will be above or below average in the last few years, but rather the ones that just go in the middle of a bunch of points that are centered close to the mean. No variable does a great job predicting 2010, but CUTI STI, BEUTI STI, and ONI pre at least capture some patterns in below average.</p>
+</section>
 <section id="next-steps" class="level2">
 <h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
 <ol type="1">
-<li><p>Fit GAMs with temporally stable relationships (status: code development)</p></li>
-<li><p>Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity</p></li>
-<li><p>Perform model selection using LFO-CV (status: code development)</p></li>
-<li><p>Fit models using regularization techniques</p></li>
-<li><p>Test an environmentally informed spatially explicit model for juvenile abundance using SMURF data and develop approach for including scuba data.</p></li>
-<li><p>Fit models using machine learning techniques</p></li>
+<li><p>Fit GAMs with temporally stable relationships (status: <strong>done</strong>)</p></li>
+<li><p>Perform model selection using LFO-CV (status: <strong>done</strong>)</p></li>
+<li><p>Evaluate marginal improvement of RMSE for multivariate GAMs and LMs (status: <strong>done</strong>)</p></li>
+<li><p>Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity (status: <strong>in development</strong>)</p></li>
+<li><p>Develop a method for a rolling window LFO-CV to address and test challenged outlined above (status: <strong>in development</strong>)</p></li>
+<li><p>Fit models using regularization techniques (status: <strong>to do</strong>)</p></li>
+<li><p>Fit models using machine learning techniques (status: <strong>to do, low priority</strong>)</p></li>
 </ol>
 </section>
 
@@ -431,23 +958,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     icon: icon
   };
   anchorJS.add('.anchored');
-  const isCodeAnnotation = (el) => {
-    for (const clz of el.classList) {
-      if (clz.startsWith('code-annotation-')) {                     
-        return true;
-      }
-    }
-    return false;
-  }
   const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
+    target: function(trigger) {
+      return trigger.previousElementSibling;
     }
   });
   clipboard.on('success', function(e) {
@@ -459,51 +972,17 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     button.classList.add('code-copy-button-checked');
     var currentTitle = button.getAttribute("title");
     button.setAttribute("title", "Copied!");
-    let tooltip;
-    if (window.bootstrap) {
-      button.setAttribute("data-bs-toggle", "tooltip");
-      button.setAttribute("data-bs-placement", "left");
-      button.setAttribute("data-bs-title", "Copied!");
-      tooltip = new bootstrap.Tooltip(button, 
-        { trigger: "manual", 
-          customClass: "code-copy-button-tooltip",
-          offset: [0, -8]});
-      tooltip.show();    
-    }
     setTimeout(function() {
-      if (tooltip) {
-        tooltip.hide();
-        button.removeAttribute("data-bs-title");
-        button.removeAttribute("data-bs-toggle");
-        button.removeAttribute("data-bs-placement");
-      }
       button.setAttribute("title", currentTitle);
       button.classList.remove('code-copy-button-checked');
     }, 1000);
     // clear code selection
     e.clearSelection();
   });
-    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-    var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp('/' + window.location.host + '/');
-    var isInternal = (href) => {
-        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-    }
-    // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
-    for (var i=0; i<links.length; i++) {
-      const link = links[i];
-      if (!isInternal(link.href)) {
-        // undo the damage that might have been done by quarto-nav.js in the case of
-        // links that we want to consider external
-        if (link.dataset.originalHref !== undefined) {
-          link.href = link.dataset.originalHref;
-        }
-      }
-    }
-  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+  function tippyHover(el, contentFn) {
     const config = {
       allowHTML: true,
+      content: contentFn,
       maxWidth: 500,
       delay: 100,
       arrow: false,
@@ -513,308 +992,43 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       interactive: true,
       interactiveBorder: 10,
       theme: 'quarto',
-      placement: 'bottom-start',
+      placement: 'bottom-start'
     };
-    if (contentFn) {
-      config.content = contentFn;
-    }
-    if (onTriggerFn) {
-      config.onTrigger = onTriggerFn;
-    }
-    if (onUntriggerFn) {
-      config.onUntrigger = onUntriggerFn;
-    }
     window.tippy(el, config); 
   }
   const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
   for (var i=0; i<noterefs.length; i++) {
     const ref = noterefs[i];
     tippyHover(ref, function() {
-      // use id or data attribute instead here
-      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      let href = ref.getAttribute('href');
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      if (note) {
-        return note.innerHTML;
-      } else {
-        return "";
-      }
+      return note.innerHTML;
     });
   }
-  const xrefs = window.document.querySelectorAll('a.quarto-xref');
-  const processXRef = (id, note) => {
-    // Strip column container classes
-    const stripColumnClz = (el) => {
-      el.classList.remove("page-full", "page-columns");
-      if (el.children) {
-        for (const child of el.children) {
-          stripColumnClz(child);
-        }
-      }
-    }
-    stripColumnClz(note)
-    if (id === null || id.startsWith('sec-')) {
-      // Special case sections, only their first couple elements
-      const container = document.createElement("div");
-      if (note.children && note.children.length > 2) {
-        container.appendChild(note.children[0].cloneNode(true));
-        for (let i = 1; i < note.children.length; i++) {
-          const child = note.children[i];
-          if (child.tagName === "P" && child.innerText === "") {
-            continue;
-          } else {
-            container.appendChild(child.cloneNode(true));
-            break;
-          }
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(container);
-        }
-        return container.innerHTML
-      } else {
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        return note.innerHTML;
-      }
-    } else {
-      // Remove any anchor links if they are present
-      const anchorLink = note.querySelector('a.anchorjs-link');
-      if (anchorLink) {
-        anchorLink.remove();
-      }
-      if (window.Quarto?.typesetMath) {
-        window.Quarto.typesetMath(note);
-      }
-      // TODO in 1.5, we should make sure this works without a callout special case
-      if (note.classList.contains("callout")) {
-        return note.outerHTML;
-      } else {
-        return note.innerHTML;
-      }
-    }
-  }
-  for (var i=0; i<xrefs.length; i++) {
-    const xref = xrefs[i];
-    tippyHover(xref, undefined, function(instance) {
-      instance.disable();
-      let url = xref.getAttribute('href');
-      let hash = undefined; 
-      if (url.startsWith('#')) {
-        hash = url;
-      } else {
-        try { hash = new URL(url).hash; } catch {}
-      }
-      if (hash) {
-        const id = hash.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note !== null) {
-          try {
-            const html = processXRef(id, note.cloneNode(true));
-            instance.setContent(html);
-          } finally {
-            instance.enable();
-            instance.show();
-          }
-        } else {
-          // See if we can fetch this
-          fetch(url.split('#')[0])
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.getElementById(id);
-            if (note !== null) {
-              const html = processXRef(id, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      } else {
-        // See if we can fetch a full url (with no hash to target)
-        // This is a special case and we should probably do some content thinning / targeting
-        fetch(url)
-        .then(res => res.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const htmlDoc = parser.parseFromString(html, "text/html");
-          const note = htmlDoc.querySelector('main.content');
-          if (note !== null) {
-            // This should only happen for chapter cross references
-            // (since there is no id in the URL)
-            // remove the first header
-            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-              note.children[0].remove();
-            }
-            const html = processXRef(null, note);
-            instance.setContent(html);
-          } 
-        }).finally(() => {
-          instance.enable();
-          instance.show();
-        });
-      }
-    }, function(instance) {
-    });
-  }
-      let selectedAnnoteEl;
-      const selectorForAnnotation = ( cell, annotation) => {
-        let cellAttr = 'data-code-cell="' + cell + '"';
-        let lineAttr = 'data-code-annotation="' +  annotation + '"';
-        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-        return selector;
-      }
-      const selectCodeLines = (annoteEl) => {
-        const doc = window.document;
-        const targetCell = annoteEl.getAttribute("data-target-cell");
-        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-        const lineIds = lines.map((line) => {
-          return targetCell + "-" + line;
-        })
-        let top = null;
-        let height = null;
-        let parent = null;
-        if (lineIds.length > 0) {
-            //compute the position of the single el (top and bottom and make a div)
-            const el = window.document.getElementById(lineIds[0]);
-            top = el.offsetTop;
-            height = el.offsetHeight;
-            parent = el.parentElement.parentElement;
-          if (lineIds.length > 1) {
-            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
-            height = bottom - top;
-          }
-          if (top !== null && height !== null && parent !== null) {
-            // cook up a div (if necessary) and position it 
-            let div = window.document.getElementById("code-annotation-line-highlight");
-            if (div === null) {
-              div = window.document.createElement("div");
-              div.setAttribute("id", "code-annotation-line-highlight");
-              div.style.position = 'absolute';
-              parent.appendChild(div);
-            }
-            div.style.top = top - 2 + "px";
-            div.style.height = height + 4 + "px";
-            div.style.left = 0;
-            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-            if (gutterDiv === null) {
-              gutterDiv = window.document.createElement("div");
-              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-              gutterDiv.style.position = 'absolute';
-              const codeCell = window.document.getElementById(targetCell);
-              const gutter = codeCell.querySelector('.code-annotation-gutter');
-              gutter.appendChild(gutterDiv);
-            }
-            gutterDiv.style.top = top - 2 + "px";
-            gutterDiv.style.height = height + 4 + "px";
-          }
-          selectedAnnoteEl = annoteEl;
-        }
-      };
-      const unselectCodeLines = () => {
-        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-        elementsIds.forEach((elId) => {
-          const div = window.document.getElementById(elId);
-          if (div) {
-            div.remove();
-          }
-        });
-        selectedAnnoteEl = undefined;
-      };
-        // Handle positioning of the toggle
-    window.addEventListener(
-      "resize",
-      throttle(() => {
-        elRect = undefined;
-        if (selectedAnnoteEl) {
-          selectCodeLines(selectedAnnoteEl);
-        }
-      }, 10)
-    );
-    function throttle(fn, ms) {
-    let throttle = false;
-    let timer;
-      return (...args) => {
-        if(!throttle) { // first call gets through
-            fn.apply(this, args);
-            throttle = true;
-        } else { // all the others get throttled
-            if(timer) clearTimeout(timer); // cancel #2
-            timer = setTimeout(() => {
-              fn.apply(this, args);
-              timer = throttle = false;
-            }, ms);
-        }
-      };
-    }
-      // Attach click handler to the DT
-      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-      for (const annoteDlNode of annoteDls) {
-        annoteDlNode.addEventListener('click', (event) => {
-          const clickedEl = event.target;
-          if (clickedEl !== selectedAnnoteEl) {
-            unselectCodeLines();
-            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-            if (activeEl) {
-              activeEl.classList.remove('code-annotation-active');
-            }
-            selectCodeLines(clickedEl);
-            clickedEl.classList.add('code-annotation-active');
-          } else {
-            // Unselect the line
-            unselectCodeLines();
-            clickedEl.classList.remove('code-annotation-active');
-          }
-        });
-      }
-  const findCites = (el) => {
-    const parentEl = el.parentElement;
-    if (parentEl) {
-      const cites = parentEl.dataset.cites;
-      if (cites) {
-        return {
-          el,
-          cites: cites.split(' ')
-        };
-      } else {
-        return findCites(el.parentElement)
-      }
-    } else {
-      return undefined;
-    }
-  };
   var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
   for (var i=0; i<bibliorefs.length; i++) {
     const ref = bibliorefs[i];
-    const citeInfo = findCites(ref);
-    if (citeInfo) {
-      tippyHover(citeInfo.el, function() {
-        var popup = window.document.createElement('div');
-        citeInfo.cites.forEach(function(cite) {
-          var citeDiv = window.document.createElement('div');
-          citeDiv.classList.add('hanging-indent');
-          citeDiv.classList.add('csl-entry');
-          var biblioDiv = window.document.getElementById('ref-' + cite);
-          if (biblioDiv) {
-            citeDiv.innerHTML = biblioDiv.innerHTML;
-          }
-          popup.appendChild(citeDiv);
-        });
-        return popup.innerHTML;
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
       });
-    }
+      return popup.innerHTML;
+    });
   }
 });
 </script>
 </div> <!-- /content -->
-
 
 
 

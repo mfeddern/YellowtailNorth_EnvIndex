@@ -30,7 +30,7 @@ covariates <- names(envir_data)#[-which(names(ocean) %in% "year")]
 
 #### GAMS with Leave One OUt Cross Validation ####
 # One decision: what's the maximum number of covariates that any model can have?
-combinations <- lapply(1:3, function(i) {
+combinations <- lapply(1:2, function(i) {
   combn(covariates, i, simplify = FALSE)
 })
 combinations <- unlist(combinations, recursive = FALSE)
@@ -43,12 +43,10 @@ results <- data.frame()
 jstart<-1
 n_year <-length(unique(dat$year))
 
-
+for (i in seq_along(combinations)) {
   #smooth_terms <- paste("s( total_release, k =3) + s(", covariates[[i]], ", k = 3)")
-  smooth_terms <- paste("s(year,by=", combinations[[i]], ", k = 6)", collapse = " + ")
+  smooth_terms <- paste("s(year,by=", combinations[[i]], ", k = 6)+ s(",combinations[[i]], ", k = 3)", collapse = " + ")
   formula_str <- paste("Y_rec ~ ", smooth_terms)
-
-  if(cross_validation) {
     predictions <- numeric(nrow(dat))
     n_year <- length(unique(dat$year))
     # Loop over each observation
@@ -77,7 +75,7 @@ n_year <-length(unique(dat$year))
   # Extract variable names
   var_names <- gsub("s\\(([^,]+),.*", "\\1", combinations[[i]])
   # Store results with variable names padded to ensure there are always 3 columns
-  padded_vars <- c(var_names, rep(NA, 3 - length(var_names)))
+  padded_vars <- c(var_names, rep(NA, 2 - length(var_names)))
 
   # Store results
   models[[i]] <- gam_model
@@ -90,8 +88,7 @@ n_year <-length(unique(dat$year))
     #AUC = auc,
     #direction = direction,
     var1 = padded_vars[1],
-    var2 = padded_vars[2],
-    var3 = padded_vars[3]
+    var2 = padded_vars[2]
     
   ))
   print(i)
@@ -130,10 +127,9 @@ baseline_rmse  <- sqrt(mean((dat$Y_rec - (predictions))^2, na.rm=T))
 # calculate the baseline RMSE
 
 # we can calculate the marginal improvement for each covariate
-results$n_cov <- ifelse(!is.na(results$var1), 1, 0) + ifelse(!is.na(results$var2), 1, 0) +
-  ifelse(!is.na(results$var3), 1, 0)
-marginals <- data.frame(cov = covariates, "rmse_01" = NA, "rmse_12" = NA, "rmse_23" = NA,
-                        "aic_01" = NA, "aic_12" = NA, "aic_23" = NA)
+results$n_cov <- ifelse(!is.na(results$var1), 1, 0) + ifelse(!is.na(results$var2), 1, 0)
+marginals <- data.frame(cov = covariates, "rmse_01" = NA, "rmse_12" = NA,
+                        "aic_01" = NA, "aic_12" = NA)
 for(i in 1:length(covariates)) {
   sub <- dplyr::filter(results, n_cov == 1,
                        var1 == covariates[i])
@@ -156,42 +152,19 @@ for(i in 1:length(covariates)) {
     sub2$AIC_diff[j] <- sub1$AIC[indx] - sub2$AIC[j]
   }
 
-  # Finally compare models with 3 covariates to models with 2 covariates
-  sub2_all <- dplyr::filter(results, n_cov == 2)
-  # Apply a function across the rows to sort the values in var1 and var2
-  sorted_names <- t(apply(sub2_all[, c("var1", "var2")], 1, function(x) sort(x)))
-  # Replace the original columns with the sorted data
-  sub2_all$var1 <- sorted_names[, 1]
-  sub2_all$var2 <- sorted_names[, 2]
-
-  sub3 <- dplyr::filter(results, n_cov == 3) %>%
-    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0) + ifelse(var3 == covariates[i],1,0)) %>%
-    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
-  sub3$rmse_diff <- 0
-  sub3$AIC_diff <- 0
-  for(j in 1:nrow(sub3)) {
-    vars <- sub3[j,c("var1", "var2","var3")]
-    vars <- sort(as.character(vars[which(vars != covariates[i])]))
-    # find the same in sub2
-    indx <- which(paste(sub2_all$var1, sub2_all$var2) == paste(vars, collapse=" "))
-    sub3$rmse_diff[j] <- sub3$RMSE[j] / sub2_all$RMSE[indx]
-    sub3$AIC_diff[j] <- sub2_all$AIC[indx] - sub3$AIC[j]
-  }
-
   # Fill in summary stats
   marginals$rmse_12[i] <- mean(sub2$rmse_diff)
   marginals$aic_12[i] <- mean(sub2$AIC_diff)
-  marginals$rmse_23[i] <- mean(sub3$rmse_diff)
-  marginals$aic_23[i] <- mean(sub3$AIC_diff)
+
 }
 
 # Calculate avergages of averages
-marginals$total_rmse <- apply(marginals[,c("rmse_01","rmse_12", "rmse_23")], 1, mean)
-marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean)
+marginals$total_rmse <- apply(marginals[,c("rmse_01","rmse_12")], 1, mean)
+marginals$total_aic <- apply(marginals[,c("aic_01","aic_12")], 1, mean)
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
-table <- dplyr::arrange(marginals, total_rmse) %>%
+nonstationary_table <- dplyr::arrange(marginals, total_rmse) %>%
   dplyr::select(cov, total_rmse, total_aic)
 
 # Fit a model that includes multiple variables from the top model

@@ -8,6 +8,7 @@ format:
     css: styles.css
 ---
 
+
 ## Background
 
 The northern Yellowtail STAT has identified 3 primary ways that the incorporation and evaluation of environmental indices could be improved upon for the 2025 assessment cycle, these include:
@@ -242,11 +243,15 @@ r.calcofi <- rotate_trends(fit.mod.calcofi)
 p.calcofi <- plot_trends2(r.calcofi,years =dat.calcofi$year)
 l.calcofi <- plot_loadings2(r.calcofi,names=namescalcofi$names)
 
+
 #is_converged(fit.mod.calcofi)
 #summary(fit.mod.calcofi)
 arranged <- ggarrange(p.calcofi, l.calcofi,ncol = 2, nrow = 1,
                       heights=c(1,1.25,1.5))
 arranged
+
+dfa_trend<-cbind(dfa=c(r.calcofi$trends_mean), year=dat.calcofi$year)
+write.csv(dfa_trend, "data-yellowtail/dfa_trend.csv")
 
 ```
 
@@ -444,7 +449,9 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 ```
 
-The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don't find that there are significant differences in CUTI STI before and after 2010. TO DO: Touch base with Mike about how CUTI may/may not address ROMS changes.
+The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don't find that there are significant differences in CUTI STI before and after 2010. Mike Jacox confirmed that there the wind data that CUTI is derived from should be stable from ROMs from at least 2000 onward. He also said he may have CUTI from GLORYs somewhere on his computer (need to follow up).
+
+From Kiva: "I included all years of "main" recruitment deviations. I would say the information quality goes down around 2010-2011, but you could use anything for playing around." This may partially explain the lack of consistency after 2010/2011
 
 ```{r}
 #| echo: false
@@ -476,16 +483,63 @@ summary(lm(CutiSTIpjuv~ROMS,data=up))
 #summary(lm(CutiSTIpjuv~year,data=up))
 ```
 
+## Univariate GAMs
+
+Here I fit univariate GAMs to evaluate the differences in AIC, Leave-One-Out Cross Validation, and Leave-Future-Out Cross Validation. The goal of this preliminary analysis before fitting multivariate GAMs was to examine more closely how different variables perform with particular attention to fits versus predictive capacity. Plotting model fits with a single variable is usedful for understanding which patterns in the data are explained by each variable.
+
+First, lets look at which models have the most support based on a) AIC, b) LOO-CV, and c) LFO-CV.
+
+```{r}
+#| echo: false
+#| warning: false
+
+univariateGAM_Results= data.frame(read.csv("univariateGAM_Results.csv"))%>%
+  select(var, RMSE_LOO, RMSE_LFO,AIC_LOO,rsq_LOO,rsq_LFO,dev.ex_LOO,dev.ex_LFO)
+
+knitr::kable(arrange(data.frame(univariateGAM_Results),RMSE_LOO), format="html")
+knitr::kable(arrange(data.frame(univariateGAM_Results),RMSE_LFO), format="html")
+```
+
+We find that the models supported with AIC and LOO-CV are very consistent and agree with the linear models, but LFO-CV is a bit of a mess. Lets look at the model fits for the full time series:
+
+```{r, fig.width=11, fig.height=8}
+#| echo: false
+#| warning: false
+
+univariateGAM_Fits= data.frame(read.csv("univariateGAM_Fits.csv"))
+
+g2 <- ggplot(univariateGAM_Fits%>%filter(Type=="fitted"), aes(year,fitted_LFO)) +
+  geom_line() +
+    geom_ribbon(aes(x=fitted_LFO, y=fitted_LFO, ymax=fitted_LFO+sd, ymin=fitted_LFO-sd), 
+              alpha=0.2)+
+  geom_point(data=univariateGAM_Fits%>%filter(Type=="predicted"),aes(x=year,y=Y_Rec),col="red") +
+  geom_point(aes(y=Y_Rec))+
+  geom_line(data=univariateGAM_Fits%>%filter(Type=="predicted"),aes(x=year,y=fitted_LFO,col="red"))+
+  facet_wrap(~ var, scale="free_x") +
+  theme_bw() +
+  xlab("Year") + ylab("Fitted") +
+  xlim(1993,2014)+
+  theme(strip.text = element_text(size=6),
+        strip.background = element_rect(fill="white"))
+g2 
+
+```
+
+Looking at this, it becomes pretty obvious that the variables with the most support are not necessarily the ones that predict whether recruitment will be above or below average in the last few years, but rather the ones that just go in the middle of a bunch of points that are centered close to the mean. No variable does a great job predicting 2010, but CUTI STI, BEUTI STI, and ONI pre at least capture some patterns in below average.
+
+
 ## Next steps
 
-1.  Fit GAMs with temporally stable relationships (status: code development)
+1.  Fit GAMs with temporally stable relationships (status: **done**)
 
-2.  Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity
+2.  Perform model selection using LFO-CV (status: **done**)
 
-3.  Perform model selection using LFO-CV (status: code development)
+3. Evaluate marginal improvement of RMSE for multivariate GAMs and LMs (status: **done**)
 
-4.  Fit models using regularization techniques
+4.  Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity (status: **in development**)
 
-5.  Test an environmentally informed spatially explicit model for juvenile abundance using SMURF data and develop approach for including scuba data.
+5. Develop a method for a rolling window LFO-CV to address and test challenged outlined above (status: **in development**)
 
-6.  Fit models using machine learning techniques
+6.  Fit models using regularization techniques (status: **to do**)
+
+7.  Fit models using machine learning techniques (status: **to do, low priority**)

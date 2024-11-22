@@ -11,10 +11,12 @@ library(recdata)
 library(predRecruit)
 
 df = data.frame(read.csv("data-yellowtail/DATA_Combined_glorys_yellowtail.csv"))
+dfa = data.frame(read.csv("data-yellowtail/dfa_trend.csv"))
 data_years = 1994:2014
 dat = df %>% 
   dplyr::select(!any_of( c('ZOOpjuv', 'ZOOben')))  %>% 
-  filter(year %in% data_years)
+  filter(year %in% data_years)%>%
+  left_join(dfa)
 envir_data = dat %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','year','Y_rec','ZOOpjuv','ZOOben')))%>%  # drop terms not in model statement
     dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv')))%>% 
@@ -133,8 +135,9 @@ for(i in 1:length(models)) {
   }
 }
 
-resid_df <- resid_df[complete.cases(resid_df),] # we want no missing values
-resid_df <- resid_df[is.element(resid_df$var, v),]
+results_arr_LOO <- arrange(results,RMSE )%>%
+  rename(AIC_LOO=AIC,RMSE_LOO=RMSE, rsq_LOO=rsq, dev.ex_LOO=dev.ex)
+
 
 g2 <- ggplot(resid_df, aes(fitted,residuals)) +
   geom_point() +
@@ -155,6 +158,9 @@ g3 <- ggplot(resid_df, aes(year,fitted)) +
   theme(strip.text = element_text(size=6),
         strip.background = element_rect(fill="white"))
 g3
+
+model_fits_LOO<-resid_df%>%
+  rename(fitted_LOO=fitted, residuals_loo=residuals)
 #### GAMS with leave future out cross valudation ####
 
 n_pred <- 4
@@ -225,8 +231,9 @@ predictions <-  numeric(n_pred )
  
    print(i)
 }
-  
-results_arr <- arrange(results,RMSE )
+  results_arr_LFO <- arrange(results,RMSE )%>%
+  rename(AIC_LFO=AIC,RMSE_LFO=RMSE, rsq_LFO=rsq, dev.ex_LFO=dev.ex)
+
 # View the results data frame
 print(results_arr)
 
@@ -247,6 +254,7 @@ predicted<-data.frame(predicted, "year"=dat$year[kstart:n_year], "Y_Rec"=dat$Y_r
 #resid_df <- resid_df[complete.cases(resid_df),] # we want no missing values
 #resid_df <- resid_df[is.element(resid_df$var, v),]
 
+
 g2 <- ggplot(resid_df, aes(year,fits)) +
   geom_line() +
     geom_ribbon(aes(x=year, y=fits, ymax=fits+sd, ymin=fits-sd), 
@@ -262,3 +270,16 @@ g2 <- ggplot(resid_df, aes(year,fits)) +
   theme(strip.text = element_text(size=6),
         strip.background = element_rect(fill="white"))
 g2 
+
+fitted_univariate_GAMS<-rbind(predicted%>%
+  rename(fits=pred)%>%mutate(sd=NA, residuals=NA, Type="predicted")%>%
+  select(-ModelID),resid_df%>%select(fits, var, year, Y_Rec, sd, residuals)%>%
+    mutate(Type="fitted"))%>%
+  rename(fitted_LFO=fits, residual_LFO=residuals)%>%
+  right_join(model_fits_LOO)
+results_full <-results_arr_LFO%>%left_join(results_arr_LOO%>%select(-ModelID))
+
+  
+write.csv(arrange(results_full,RMSE_LOO),"univariateGAM_Results.csv")
+write.csv(fitted_univariate_GAMS,"univariateGAM_Fits.csv")
+
