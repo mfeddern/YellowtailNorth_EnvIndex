@@ -55,6 +55,8 @@ library(corrplot)
 library(car)
 library(ggpubr)
 library(fst)
+library(viridis)
+library(ggbeeswarm)
 
 source("Src/_00_yellowtail-header.r")
 source("Src/Functions-for-envir-index.r")
@@ -527,6 +529,71 @@ g2
 
 Looking at this, it becomes pretty obvious that the variables with the most support are not necessarily the ones that predict whether recruitment will be above or below average in the last few years, but rather the ones that just go in the middle of a bunch of points that are centered close to the mean. No variable does a great job predicting 2010, but CUTI STI, BEUTI STI, and ONI pre at least capture some patterns in below average.
 
+## Multivarite GAM
+
+The univariate results are useful for looking at general fits to the data, now lets look at the multivariate results. First lets look at the patterns in some summary states across models, and compare LOO and LFO. 
+
+```{r}
+#| echo: false
+#| warning: false
+
+multGAM_Results= data.frame(read.csv("MultivariateGAMresults.csv"))
+MIgam= data.frame(read.csv("MarginalImprovementGAM.csv"))
+ggplot(data=multGAM_Results, aes(x = cv, y = rsq, col=cv)) +
+  geom_beeswarm(alpha=0.6, dodge.width = 1) +
+  xlab("") +
+  ylab("R2") +
+  scale_color_viridis(discrete = TRUE, end=0.8) +
+  theme_bw() +
+#  coord_cartesian(ylim=c(0.75,1.75)) +
+  geom_hline(yintercept=1) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
+
+MIgamlong<-MIgam%>%pivot_longer(!c(cov,cv,model,X),names_to = 'criterion', values_to='value')
+
+ggplot(data=MIgamlong, aes(x = cv, y =value, col=cv)) +
+  facet_wrap(~criterion, scales = "free")+
+  geom_beeswarm(alpha=0.6, dodge.width = 1) +
+  xlab("") +
+  ylab("RMSE or AIC") +
+  scale_color_viridis(discrete = TRUE, end=0.8) +
+  theme_bw() +
+#  coord_cartesian(ylim=c(0.75,1.75)) +
+  geom_hline(yintercept=c(0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5))
+cv=unique(MIgamlong$cv)
+criterion=unique(MIgamlong$criterion)
+
+ggplot(MIgam%>%filter(cv=="LFO"), 
+         aes(x = reorder(cov,-total_rmse), y = total_rmse)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip the axes to make a horizontal bar graph
+  geom_hline(yintercept=1, col='red')+
+  labs(title = paste(criterion[2],cv[2]), x = "Marginal Improvement", y = "Covariate")
+ggplot(MIgam%>%filter(cv==cv[2]), 
+         aes(x = reorder(cov,-total_rmse), y =total_rmse)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip the axes to make a horizontal bar graph
+    geom_hline(yintercept=1, col='red')+
+  labs(title = paste(criterion[2],cv[1]), x = "Marginal Improvement", y = "Covariate")
+
+
+
+ggplot(MIgam%>%filter(cv==cv[1]), 
+         aes(x = reorder(cov,total_aic), y = total_aic)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip the axes to make a horizontal bar graph
+ geom_hline(yintercept=0, col='red')+
+   labs(title = paste(criterion[2],cv[1]), x = "Marginal Improvement", y = "Covariate")
+ggplot(MIgam%>%filter(cv=="LFO"), 
+         aes(x = reorder(cov,total_aic), y = total_aic)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip the axes to make a horizontal bar graph
+   geom_hline(yintercept=0, col='red')+
+  labs(title = paste(criterion[2],cv[2]), x = "Marginal Improvement", y = "Covariate")
+
+
+```
 
 ## Next steps
 

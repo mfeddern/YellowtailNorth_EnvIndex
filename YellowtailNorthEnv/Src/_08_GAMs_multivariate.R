@@ -2,7 +2,6 @@ library(dplyr)
 library(tidyr)
 library(corrplot)
 library(mgcv)
-library(pROC)
 library(DHARMa)
 library(mgcViz)
 library(gridExtra)
@@ -13,22 +12,21 @@ library(dplyr)
 library(mgcv)
 library(gratia)
 library(tidyverse)
-library(pROC)
 library(corrplot)
-
+library(car)
 
 df = data.frame(read.csv("data-yellowtail/DATA_Combined_glorys_yellowtail.csv"))
+dfa = data.frame(read.csv("data-yellowtail/dfa_trend.csv"))
 data_years = 1994:2014
-data = df %>% 
+dat = df %>% 
   dplyr::select(!any_of( c('ZOOpjuv', 'ZOOben')))  %>% 
-  filter(year %in% data_years)
+  filter(year %in% data_years)%>%
+  left_join(dfa)
 envir_data = dat %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','year','Y_rec','ZOOpjuv','ZOOben')))%>%  # drop terms not in model statement
-    dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv')))%>% 
-    mutate_all(~ scale(.)) # drop terms not in model statement
-dat<-data.frame(year=data$year, Y_rec=data$Y_rec, envir_data)
-head(envir_data)
-dim(envir_data)
+  dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv')))%>% 
+  mutate_all(~ scale(.)) # drop terms not in model statement
+
 
 summary(gam( BeutiSTIpjuv~ ONIpjuv, data=envir_data))$r.sq
 # Vector of marine covariates for univariate GAM loop
@@ -68,9 +66,27 @@ combinations_to_omit <- list(
   c("HCIpjuv", "PDOpjuv"), 
   c("MLDpart", "MLDlarv"), 
   c("Tpart", "HCIlarv"), 
-  c("Tpart", "PDOlarv")) 
+  c("Tpart", "PDOlarv"),
+  c("DDpre", "dfa"),
+  c("DDegg" , "dfa"),
+  c("DDlarv", "dfa"),
+  c("DDben" , "dfa"),
+  c("Tcop", "dfa"),
+  c("Tpart", "dfa"),
+  c("MLDpart", "dfa"),
+  c( "CSTpjuv", "dfa"),
+  c("LSTpjuv", "dfa"),
+  c("HCIlarv", "dfa"),
+  c("HCIpjuv", "dfa"),
+  c("ONIpre", "dfa"),
+  c("ONIpjuv", "dfa"),
+  c("PDOlarv", "dfa"),
+  c("PDOpjuv", "dfa"),
+  c("CutiTUMIpjuv", "dfa"),
+  c("BeutiTUMIpjuv", "dfa"),
+  c("BeutiSTIpjuv", "dfa")) 
  
-
+colnames(envir_data) 
 # Function to check if a combination is a partial match of any combination to omit
 is_partial_match <- function(comb, omit_list) {
   any(sapply(omit_list, function(omit) all(omit %in% comb)))
@@ -163,6 +179,7 @@ for (i in seq_along(combinations)) {
   print(i)
 }
 
+
 # Create a baseline model with only the intercept
 
     predictions <- numeric(nrow(dat))
@@ -185,7 +202,7 @@ baseline_rmse  <- sqrt(mean((dat$Y_rec - (predictions))^2, na.rm=T))
 
 # filter for frowns only
 results_gam_loo<-results%>%
-  mutate(RMSE_improv=RMSE/baseline_rmse)
+  mutate(RMSE_improv=RMSE/baseline_rmse, cv="LOO", model="GAM")
 results_arr_RMSE <- arrange(results_gam_loo,RMSE )
 # View the results data frame
 print(results_arr_RMSE)
@@ -257,11 +274,12 @@ marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
-gam_loo_table <- dplyr::arrange(marginals, total_rmse) %>%
-  dplyr::select(cov, total_rmse, total_aic)
+gam_loo_table <- dplyr::arrange(marginals, total_rmse)%>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LOO",model="GAM")
 
 # Fit a model that includes multiple variables from the top model
-combos = c(table$cov[1], table$cov[2], table$cov[3], table$cov[4], table$cov[5])
+combos = c(gam_loo_table$cov[1], gam_loo_table$cov[2], gam_loo_table$cov[3], gam_loo_table$cov[4], gam_loo_table$cov[5])
 smooth_terms <- paste("s(", combos, ", k = 3)", collapse = " + ")
 formula_str <- paste("Y_rec ~ ", smooth_terms)
 gam_model <- gam(as.formula(formula_str),
@@ -274,7 +292,6 @@ the_lm2 <-  lm(Y_rec ~  LSTlarv + ONIpjuv + CutiSTIpjuv + MLDpjuv + Tcop, data=d
 vif(the_lm2)
 
 partial_effects <- gratia::draw(gam_model, transform = "response", cex = 2)
-ggsave(partial_effects, filename = paste0("plots/coho/coho_",run,"_gam_partial_effects.png"), height = 7, width = 10)
 summary(gam_model)
 
 
@@ -400,6 +417,9 @@ results_arr_AIC <- arrange(results,AIC )
 # View the results data frame
 print(results_arr_AIC)
 
+results_gam_lfo<-results%>%
+  mutate(RMSE_improv=RMSE/baseline_rmse, cv="LFO", model="GAM")
+
 # calculate the baseline RMSE
 
 # we can calculate the marginal improvement for each covariate
@@ -465,7 +485,8 @@ marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
 table <- dplyr::arrange(marginals, total_rmse) %>%
-  dplyr::select(cov, total_rmse, total_aic)
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LFO",model="GAM")
 
 # Fit a model that includes multiple variables from the top model
 combos = c(table$cov[1], table$cov[2], table$cov[3], table$cov[4], table$cov[5])
@@ -481,11 +502,11 @@ the_lm3 <-  lm(Y_rec ~ LSTlarv + PDOlarv + Tcop, data=dat)
 vif(the_lm3)
 
 partial_effects <- gratia::draw(gam_model, transform = "response", cex = 2)
-ggsave(partial_effects, filename = paste0("plots/coho/coho_",run,"_gam_partial_effects.png"), height = 7, width = 10)
 summary(gam_model)
 
 
-
+write.csv(rbind(gam_loo_table,table),"MarginalImprovementGAM.csv")
+write.csv(rbind(results_gam_lfo,results_gam_loo),"MultivariateGAMresults.csv")
 
 
 
