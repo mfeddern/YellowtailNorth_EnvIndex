@@ -30,7 +30,7 @@ covariates <- names(envir_data)#[-which(names(ocean) %in% "year")]
 
 #### GAMS with Leave One OUt Cross Validation ####
 # One decision: what's the maximum number of covariates that any model can have?
-combinations <- lapply(1:2, function(i) {
+combinations <- lapply(1:3, function(i) {
   combn(covariates, i, simplify = FALSE)
 })
 combinations <- unlist(combinations, recursive = FALSE)
@@ -45,7 +45,7 @@ n_year <-length(unique(dat$year))
 
 for (i in seq_along(combinations)) {
   #smooth_terms <- paste("s( total_release, k =3) + s(", covariates[[i]], ", k = 3)")
-  smooth_terms <- paste("s(year,by=", combinations[[i]], ", k = 6)+ s(",combinations[[i]], ", k = 3)", collapse = " + ")
+  smooth_terms <- paste("s(year,by=", combinations[[i]], ", k = 6)", collapse = " + ")
   formula_str <- paste("Y_rec ~ ", smooth_terms)
     predictions <- numeric(nrow(dat))
     n_year <- length(unique(dat$year))
@@ -75,7 +75,7 @@ for (i in seq_along(combinations)) {
   # Extract variable names
   var_names <- gsub("s\\(([^,]+),.*", "\\1", combinations[[i]])
   # Store results with variable names padded to ensure there are always 3 columns
-  padded_vars <- c(var_names, rep(NA, 2 - length(var_names)))
+  padded_vars <- c(var_names, rep(NA, 3 - length(var_names)))
 
   # Store results
   models[[i]] <- gam_model
@@ -88,7 +88,8 @@ for (i in seq_along(combinations)) {
     #AUC = auc,
     #direction = direction,
     var1 = padded_vars[1],
-    var2 = padded_vars[2]
+    var2 = padded_vars[2],
+    var2 = padded_vars[3]
     
   ))
   print(i)
@@ -107,6 +108,7 @@ print(results_arr)
 # Create a baseline model with only the intercept
 
     predictions <- numeric(nrow(dat))
+    predictions2 <- numeric(nrow(dat))
     n_year <- length(unique(dat$year))
 
     # Loop over each observation
@@ -117,12 +119,16 @@ print(results_arr)
       # Fit model on n-1 observations
       gam_model <- gam(Y_rec ~ s(year, k=6),
                        data = dat[which(dat$year != unique(dat$year)[j]), ])
-
+      gam_model2 <- gam(Y_rec ~ 1,
+                       data = dat[which(dat$year != unique(dat$year)[j]), ])
       # Predict the excluded observation
       predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
-    }
+         predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model2, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
+
+       }
 
 baseline_rmse  <- sqrt(mean((dat$Y_rec - (predictions))^2, na.rm=T))
+baseline_rmse2  <- sqrt(mean((dat$Y_rec - (predictions2))^2, na.rm=T))
 
 # calculate the baseline RMSE
 
@@ -164,8 +170,9 @@ marginals$total_aic <- apply(marginals[,c("aic_01","aic_12")], 1, mean)
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
-nonstationary_table <- dplyr::arrange(marginals, total_rmse) %>%
-  dplyr::select(cov, total_rmse, total_aic)
+nonstationary_table_loo <- dplyr::arrange(marginals, total_rmse) %>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LOO",model="NS")
 
 # Fit a model that includes multiple variables from the top model
 combos = c(table$cov[1], table$cov[2], table$cov[3], table$cov[4], table$cov[5])
@@ -184,3 +191,391 @@ partial_effects <- gratia::draw(gam_model, transform = "response", cex = 2)
 ggsave(partial_effects, filename = paste0("plots/coho/coho_",run,"_gam_partial_effects.png"), height = 7, width = 10)
 summary(gam_model)
 
+#### GAMS with leave future out cross valudation ####
+
+n_pred <- 5
+train_start<-1
+`%notin%` <- Negate(`%in%`)
+n_year <-length(unique(dat$year))
+n_train <- n_year-n_pred 
+predicted<- data.frame()
+kstart<-n_train+1
+models <- list()
+results <- data.frame()
+for (i in seq_along(combinations)) {
+  # ps here represents a P-spline / penalized regression spline
+  # k represent the number of parameters / knots estimating function at, should be small
+
+  # smooth on total release isn't needed when we're not working with jack rate
+  #smooth_terms <- paste("s( total_release, k =3) + s(", covariates[[i]], ", k = 3)")
+  smooth_terms <- paste("s(year,by=", combinations[[i]], ", k = 6)", collapse = " + ")
+  formula_str <- paste("Y_rec ~ ", smooth_terms)
+predictions <-  numeric(n_pred )
+
+    # Loop over each observation
+    for (k in kstart:n_year) {
+      train_index <- setdiff(train_start:n_train, k)  # All indices except the k-th
+      test_index <- k                 # The k-th index
+
+      # Fit model on n-k observations
+      gam_model <- gam(as.formula(formula_str),
+                     data = dat[which(dat$year %notin% unique(dat$year)[k:n_year]), ])
+
+      # Predict the excluded observation
+      predictions[which(dat$year == unique(dat$year)[k])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[k]), ])
+        # re-fit the model
+
+  }
+    # re-fit the model
+    gam_model <- gam(as.formula(formula_str),
+                     #data = dat)
+                     data = dat[which(dat$year %notin% unique(dat$year)[kstart:n_year]), ])
+        gam_model2 <- gam(as.formula(formula_str),
+                     data = dat)
+  # keep in mind RMSE is weird for binomial things
+  rmse <- sqrt(mean((dat$Y_rec[kstart:n_year] - predictions[kstart:n_year])^2, na.rm=T))
+  r2<-summary(gam_model)$r.sq
+  dev.expl<-summary(gam_model)$dev.expl
+     # Extract variable names
+  var_names <- gsub("s\\(([^,]+),.*", "\\1", combinations[[i]])
+  # Extract variable names
+ padded_vars <- c(var_names, rep(NA, 3 - length(var_names)))
+  # Store results
+  models[[i]] <- gam_model
+  results <- rbind(results, data.frame(
+    ModelID = i,
+    AIC = AIC(gam_model),
+    RMSE = round(rmse,3),
+    rsq=round(r2,2),
+    dev.ex=round(dev.expl,4),
+    #AUC = auc,
+    #direction = direction,
+     var1 = padded_vars[1],
+    var2 = padded_vars[2],
+    var3 = padded_vars[3]
+    
+    
+  ))
+    predicted <- rbind(predicted, data.frame(
+    ModelID = i,
+    pred=predictions[kstart:n_year],
+     var1 = padded_vars[1],
+    var2 = padded_vars[2],
+    var2 = padded_vars[3]
+    
+    
+  ))
+ 
+   print(i)
+}
+  
+results_arr <- arrange(results,RMSE )
+# View the results data frame
+print(results_arr)
+
+
+
+# Create a baseline model with only the intercept
+
+predictions <- numeric(nrow(dat))
+n_year <- length(unique(dat$year))
+
+# Loop over each observation
+for (j in 1:n_year) {
+  # Fit model on n-1 observations
+  gam_model <- gam(Y_rec ~ 1,
+                   data = dat[which(dat$year != unique(dat$year)[j]), ])
+  for (k in kstart:n_year) {
+    train_index <- setdiff(train_start:n_train, k)  # All indices except the k-th
+    test_index <- k                 # The k-th index
+    
+    # Fit model on n-k observations
+    gam_model <- gam(Y_rec ~ s(year, k=6),
+                     data = dat[which(dat$year != unique(dat$year)[j]), ])
+    
+    # Predict the excluded observation
+    predictions[which(dat$year == unique(dat$year)[k])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[k]), ])
+    # re-fit the model
+    
+  }
+  # Predict the excluded observation
+  predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
+}
+
+baseline_rmse  <- sqrt(mean((dat$Y_rec - (predictions))^2, na.rm=T))
+
+# filter for frowns only
+
+results_arr_RMSE <- arrange(results,RMSE )
+# View the results data frame
+print(results_arr_RMSE)
+results_arr_AIC <- arrange(results,AIC )
+# View the results data frame
+print(results_arr_AIC)
+
+results_gam_lfo<-results%>%
+  mutate(RMSE_improv=RMSE/baseline_rmse, cv="LFO_5", model="GAM")
+
+# calculate the baseline RMSE
+
+# we can calculate the marginal improvement for each covariate
+results$n_cov <- ifelse(!is.na(results$var1), 1, 0) + ifelse(!is.na(results$var2), 1, 0) +
+  ifelse(!is.na(results$var3), 1, 0)
+marginals <- data.frame(cov = covariates, "rmse_01" = NA, "rmse_12" = NA, "rmse_23" = NA,
+                        "aic_01" = NA, "aic_12" = NA, "aic_23" = NA)
+for(i in 1:length(covariates)) {
+  sub <- dplyr::filter(results, n_cov == 1,
+                       var1 == covariates[i])
+  marginals$rmse_01[i] <- sub$RMSE / baseline_rmse
+  marginals$aic_01[i] <- AIC(gam_model) - sub$AIC
+  
+  # next look at all values of models that have 2 covariates and include this model
+  sub1 <- dplyr::filter(results, n_cov == 1)
+  sub2 <- dplyr::filter(results, n_cov == 2) %>%
+    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0)) %>%
+    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
+  # loop over every variable in sub2, and find the simpler model in sub1 that just represents the single covariate
+  sub2$rmse_diff <- 0
+  sub2$AIC_diff <- 0
+  for(j in 1:nrow(sub2)) {
+    vars <- sub2[j,c("var1", "var2")]
+    vars <- vars[which(vars != covariates[i])]
+    indx <- which(sub1$var1 == as.character(vars))
+    sub2$rmse_diff[j] <- sub2$RMSE[j] / sub1$RMSE[indx]
+    sub2$AIC_diff[j] <- sub1$AIC[indx] - sub2$AIC[j]
+  }
+  
+  # Finally compare models with 3 covariates to models with 2 covariates
+  sub2_all <- dplyr::filter(results, n_cov == 2)
+  # Apply a function across the rows to sort the values in var1 and var2
+  sorted_names <- t(apply(sub2_all[, c("var1", "var2")], 1, function(x) sort(x)))
+  # Replace the original columns with the sorted data
+  sub2_all$var1 <- sorted_names[, 1]
+  sub2_all$var2 <- sorted_names[, 2]
+  
+  sub3 <- dplyr::filter(results, n_cov == 3) %>%
+    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0) + ifelse(var3 == covariates[i],1,0)) %>%
+    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
+  sub3$rmse_diff <- 0
+  sub3$AIC_diff <- 0
+  for(j in 1:nrow(sub3)) {
+    vars <- sub3[j,c("var1", "var2","var3")]
+    vars <- sort(as.character(vars[which(vars != covariates[i])]))
+    # find the same in sub2
+    indx <- which(paste(sub2_all$var1, sub2_all$var2) == paste(vars, collapse=" "))
+    sub3$rmse_diff[j] <- sub3$RMSE[j] / sub2_all$RMSE[indx]
+    sub3$AIC_diff[j] <- sub2_all$AIC[indx] - sub3$AIC[j]
+  }
+  
+  # Fill in summary stats
+  marginals$rmse_12[i] <- mean(sub2$rmse_diff)
+  marginals$aic_12[i] <- mean(sub2$AIC_diff)
+  marginals$rmse_23[i] <- mean(sub3$rmse_diff)
+  marginals$aic_23[i] <- mean(sub3$AIC_diff)
+}
+
+# Calculate avergages of averages
+marginals$total_rmse <- apply(marginals[,c("rmse_01","rmse_12", "rmse_23")], 1, mean)
+marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean)
+
+# CREATE TABLE OF RMSE/AIC------------------------------------
+
+nonstationary_table_5 <- dplyr::arrange(marginals, total_rmse) %>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LFO_5",model="NS")
+
+#### GAMS with leave future out cross valudation ####
+
+n_pred <- 10
+train_start<-1
+`%notin%` <- Negate(`%in%`)
+n_year <-length(unique(dat$year))
+n_train <- n_year-n_pred 
+predicted<- data.frame()
+kstart<-n_train+1
+models <- list()
+results <- data.frame()
+for (i in seq_along(combinations)) {
+  # ps here represents a P-spline / penalized regression spline
+  # k represent the number of parameters / knots estimating function at, should be small
+
+  # smooth on total release isn't needed when we're not working with jack rate
+  #smooth_terms <- paste("s( total_release, k =3) + s(", covariates[[i]], ", k = 3)")
+  smooth_terms <- paste("s(year,by=", combinations[[i]], ", k = 6)", collapse = " + ")
+  formula_str <- paste("Y_rec ~ ", smooth_terms)
+predictions <-  numeric(n_pred )
+
+    # Loop over each observation
+    for (k in kstart:n_year) {
+      train_index <- setdiff(train_start:n_train, k)  # All indices except the k-th
+      test_index <- k                 # The k-th index
+
+      # Fit model on n-k observations
+      gam_model <- gam(as.formula(formula_str),
+                     data = dat[which(dat$year %notin% unique(dat$year)[k:n_year]), ])
+
+      # Predict the excluded observation
+      predictions[which(dat$year == unique(dat$year)[k])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[k]), ])
+        # re-fit the model
+
+  }
+    # re-fit the model
+    gam_model <- gam(as.formula(formula_str),
+                     #data = dat)
+                     data = dat[which(dat$year %notin% unique(dat$year)[kstart:n_year]), ])
+        gam_model2 <- gam(as.formula(formula_str),
+                     data = dat)
+  # keep in mind RMSE is weird for binomial things
+  rmse <- sqrt(mean((dat$Y_rec[kstart:n_year] - predictions[kstart:n_year])^2, na.rm=T))
+  r2<-summary(gam_model)$r.sq
+  dev.expl<-summary(gam_model)$dev.expl
+     # Extract variable names
+  var_names <- gsub("s\\(([^,]+),.*", "\\1", combinations[[i]])
+  # Extract variable names
+ padded_vars <- c(var_names, rep(NA, 3 - length(var_names)))
+  # Store results
+  models[[i]] <- gam_model
+  results <- rbind(results, data.frame(
+    ModelID = i,
+    AIC = AIC(gam_model),
+    RMSE = round(rmse,3),
+    rsq=round(r2,2),
+    dev.ex=round(dev.expl,4),
+    #AUC = auc,
+    #direction = direction,
+     var1 = padded_vars[1],
+    var2 = padded_vars[2],
+    var3 = padded_vars[3]
+    
+    
+  ))
+    predicted <- rbind(predicted, data.frame(
+    ModelID = i,
+    pred=predictions[kstart:n_year],
+     var1 = padded_vars[1],
+    var2 = padded_vars[2],
+    var2 = padded_vars[3]
+    
+    
+  ))
+ 
+   print(i)
+}
+  
+results_arr <- arrange(results,RMSE )
+# View the results data frame
+print(results_arr)
+
+
+
+# Create a baseline model with only the intercept
+
+predictions <- numeric(nrow(dat))
+n_year <- length(unique(dat$year))
+
+# Loop over each observation
+for (j in 1:n_year) {
+  # Fit model on n-1 observations
+  gam_model <- gam(Y_rec ~ 1,
+                   data = dat[which(dat$year != unique(dat$year)[j]), ])
+  for (k in kstart:n_year) {
+    train_index <- setdiff(train_start:n_train, k)  # All indices except the k-th
+    test_index <- k                 # The k-th index
+    
+    # Fit model on n-k observations
+    gam_model <- gam(Y_rec ~ s(year, k=6),
+                     data = dat[which(dat$year != unique(dat$year)[j]), ])
+    
+    # Predict the excluded observation
+    predictions[which(dat$year == unique(dat$year)[k])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[k]), ])
+    # re-fit the model
+    
+  }
+  # Predict the excluded observation
+  predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
+}
+
+baseline_rmse  <- sqrt(mean((dat$Y_rec - (predictions))^2, na.rm=T))
+
+# filter for frowns only
+
+results_arr_RMSE <- arrange(results,RMSE )
+# View the results data frame
+print(results_arr_RMSE)
+results_arr_AIC <- arrange(results,AIC )
+# View the results data frame
+print(results_arr_AIC)
+
+results_gam_lfo<-results%>%
+  mutate(RMSE_improv=RMSE/baseline_rmse, cv="LFO_5", model="GAM")
+
+# calculate the baseline RMSE
+
+# we can calculate the marginal improvement for each covariate
+results$n_cov <- ifelse(!is.na(results$var1), 1, 0) + ifelse(!is.na(results$var2), 1, 0) +
+  ifelse(!is.na(results$var3), 1, 0)
+marginals <- data.frame(cov = covariates, "rmse_01" = NA, "rmse_12" = NA, "rmse_23" = NA,
+                        "aic_01" = NA, "aic_12" = NA, "aic_23" = NA)
+for(i in 1:length(covariates)) {
+  sub <- dplyr::filter(results, n_cov == 1,
+                       var1 == covariates[i])
+  marginals$rmse_01[i] <- sub$RMSE / baseline_rmse
+  marginals$aic_01[i] <- AIC(gam_model) - sub$AIC
+  
+  # next look at all values of models that have 2 covariates and include this model
+  sub1 <- dplyr::filter(results, n_cov == 1)
+  sub2 <- dplyr::filter(results, n_cov == 2) %>%
+    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0)) %>%
+    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
+  # loop over every variable in sub2, and find the simpler model in sub1 that just represents the single covariate
+  sub2$rmse_diff <- 0
+  sub2$AIC_diff <- 0
+  for(j in 1:nrow(sub2)) {
+    vars <- sub2[j,c("var1", "var2")]
+    vars <- vars[which(vars != covariates[i])]
+    indx <- which(sub1$var1 == as.character(vars))
+    sub2$rmse_diff[j] <- sub2$RMSE[j] / sub1$RMSE[indx]
+    sub2$AIC_diff[j] <- sub1$AIC[indx] - sub2$AIC[j]
+  }
+  
+  # Finally compare models with 3 covariates to models with 2 covariates
+  sub2_all <- dplyr::filter(results, n_cov == 2)
+  # Apply a function across the rows to sort the values in var1 and var2
+  sorted_names <- t(apply(sub2_all[, c("var1", "var2")], 1, function(x) sort(x)))
+  # Replace the original columns with the sorted data
+  sub2_all$var1 <- sorted_names[, 1]
+  sub2_all$var2 <- sorted_names[, 2]
+  
+  sub3 <- dplyr::filter(results, n_cov == 3) %>%
+    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0) + ifelse(var3 == covariates[i],1,0)) %>%
+    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
+  sub3$rmse_diff <- 0
+  sub3$AIC_diff <- 0
+  for(j in 1:nrow(sub3)) {
+    vars <- sub3[j,c("var1", "var2","var3")]
+    vars <- sort(as.character(vars[which(vars != covariates[i])]))
+    # find the same in sub2
+    indx <- which(paste(sub2_all$var1, sub2_all$var2) == paste(vars, collapse=" "))
+    sub3$rmse_diff[j] <- sub3$RMSE[j] / sub2_all$RMSE[indx]
+    sub3$AIC_diff[j] <- sub2_all$AIC[indx] - sub3$AIC[j]
+  }
+  
+  # Fill in summary stats
+  marginals$rmse_12[i] <- mean(sub2$rmse_diff)
+  marginals$aic_12[i] <- mean(sub2$AIC_diff)
+  marginals$rmse_23[i] <- mean(sub3$rmse_diff)
+  marginals$aic_23[i] <- mean(sub3$AIC_diff)
+}
+
+# Calculate avergages of averages
+marginals$total_rmse <- apply(marginals[,c("rmse_01","rmse_12", "rmse_23")], 1, mean)
+marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean)
+
+# CREATE TABLE OF RMSE/AIC------------------------------------
+
+table_10 <- dplyr::arrange(marginals, total_rmse) %>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LFO_10",model="NS")
+
+
+write.csv(rbind(nonstationary_table_5,nonstationary_table_loo),"MarginalImprovementNS.csv")

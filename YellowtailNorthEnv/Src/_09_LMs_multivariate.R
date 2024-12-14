@@ -207,8 +207,9 @@ marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
-table <- dplyr::arrange(marginals, total_rmse) %>%
-  dplyr::select(cov, total_rmse, total_aic)
+table_loo <- dplyr::arrange(marginals, total_rmse) %>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LOO",model="LM")
 
 # Fit a model that includes multiple variables from the top model
 combos = c(table$cov[1], 
@@ -230,7 +231,7 @@ summary(lm_model )
 
 #### LMS with leave future out cross valudation ####
 
-n_pred <- 4
+n_pred <- 5
 train_start<-1
 `%notin%` <- Negate(`%in%`)
 n_year <-length(unique(dat$year))
@@ -414,8 +415,9 @@ marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
-table <- dplyr::arrange(marginals, total_rmse) %>%
-  dplyr::select(cov, total_rmse, total_aic)
+table_5 <- dplyr::arrange(marginals, total_rmse) %>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LFO_5",model="LM")
 
 # Fit a model that includes multiple variables from the top model
 combos = c(table$cov[1], 
@@ -433,6 +435,9 @@ lm_model <- lm(as.formula(formula_str),
 
 vif(lm_model)
 
+
 partial_effects <- gratia::draw(gam_model, transform = "response", cex = 2)
 ggsave(partial_effects, filename = paste0("plots/coho/coho_",run,"_gam_partial_effects.png"), height = 7, width = 10)
 summary(lm_model)
+
+write.csv(rbind(table_loo,table_5,table_10),"MarginalImprovementLM.csv")
