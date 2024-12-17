@@ -10,15 +10,15 @@ library(ROCR)
 library(recdata)
 library(predRecruit)
 library(ggpubr)
+library(car)
 
-
-univariate_ns<-data.frame(read.csv("univariateNS_Results.csv"))
-univariate_gam<-data.frame(read.csv("univariateGAM_Results.csv"))
-univariate_lm<-data.frame(read.csv("univariateLM_Results.csv"))
-mult_gam<-data.frame(read.csv("MultivariateGAMresults.csv"))
-marginal_gam<-data.frame(read.csv("MarginalImprovementGAM.csv"))
-marginal_lm<-data.frame(read.csv("MarginalImprovementLM.csv"))
-marginal_NS<-data.frame(read.csv("MarginalImprovementNS.csv"))
+univariate_ns<-data.frame(read.csv("results-yellowtail/univariateNS_Results.csv"))
+univariate_gam<-data.frame(read.csv("results-yellowtail/univariateGAM_Results.csv"))
+univariate_lm<-data.frame(read.csv("results-yellowtail/univariateLM_Results.csv"))
+mult_gam<-data.frame(read.csv("results-yellowtail/MultivariateGAMresults.csv"))
+marginal_gam<-data.frame(read.csv("results-yellowtail/MarginalImprovementGAM.csv"))
+marginal_lm<-data.frame(read.csv("results-yellowtail/MarginalImprovementLM.csv"))
+marginal_NS<-data.frame(read.csv("results-yellowtail/MarginalImprovementNS.csv"))
 df = data.frame(read.csv("data-yellowtail/DATA_Combined_glorys_yellowtail.csv"))
 dfa = data.frame(read.csv("data-yellowtail/dfa_trend.csv"))
 data_years = 1994:2014
@@ -157,3 +157,27 @@ ggplot(marginal3%>%
     theme_bw()+
   theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
 ggsave("figures-yellowtail/MarginalImprovementv2.png", height = 12, width = 10)
+
+
+margtop5<-marginal3%>%
+  filter(RMSE_perc>0)%>%
+  arrange(cv,model,desc(RMSE_perc))%>%
+  group_by(cv,model)%>% 
+  slice(1:5)
+
+ggplot(margtop5%>%
+  group_by(cv,model)%>%
+  mutate(name = fct_reorder(cov, desc(RMSE_perc)))%>%ungroup(), aes(x=cov, y=RMSE_perc,fill=type,group=type)) +
+    geom_bar(stat="identity",  alpha=.6, width=.4) +
+  facet_grid(model~cv)+  
+  coord_flip() +
+    ylab("Percent Change in RMSE") +
+  xlab("Oceanogrpahic Conditions") +
+    theme_bw()+
+  theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
+
+ggsave("figures-yellowtail/MarginalImprovementTop5.png", height = 12, width = 10)
+write.csv(margtop5,"results-yellowtail/Top5MarginalImprovement.csv")
+
+
+

@@ -1,0 +1,54 @@
+---
+title: "YellowtailNorthSummary"
+format: html
+editor: visual
+---
+
+## A.1 Oceanographic indicators of northern Yellowtail
+
+Darby et al. In Prep examined the relationship between recruitment deciations from the 2017 northern Yellowtail rockfish assessment (Taylor et al. 2017) following methods of Haltuch et al. 2020. The oceanographic conditions investigated were based on an extensive literature review of  conditions impacting northern Yellowtail rockfish throughout different lifestages linked to recruitment. Previous assessments used Regional Ocean Modeling System (ROMS) but Petrale 2023 identified inconsistencies in oceanographic conditions impacting groundfish recruitment. We used an alternative model, Global Ocean Physics Reanalysis (GLORYS), for conditions that were identified to have inconsistencies in the 2023 Petrale Sole assessment (citation) and which was used for the Pacific hake assessment (citation). Upwelling conditions were not available from GLORYs and thus a ROMs upwelling time series was used.
+
+The study area encompassed the region from Xlat to Ylat in teh California Current Ecosystem with individual predictors limited by depth and/or distance from the shore (Table X). Model selection resulted in a single model with four oceanographic varibles explaining 65% of the deviation in recruitmnet deviations. Recruitment deviations were:
+
+(1) Negatively associated with later spring transition of the upwelling season derived from the Coastal Upwelling Transport Index (CutiSTIpjuv)
+(2) Recruitment is maximized when mixed layer depth at the larval stage (MLDlarv) is one standard deviation above average 
+(3) Recruitment is maximized when HCI during the larval stage (HCIlarv) is at average values
+
+(4) Recruitment is maximized when long-shore transport during the larval stage (LSTlarv) is above or below average. 
+
+These results indicate that output from oceanographic models might be a useful basis for an environmental index of recruitment for northern Yellowtail rockfish to allow for better model precision and near-term forecasting. However, the conditions that are most important for northern Yellowtail recruitment vary through time, and as a result so does the predictive capacity of individual
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

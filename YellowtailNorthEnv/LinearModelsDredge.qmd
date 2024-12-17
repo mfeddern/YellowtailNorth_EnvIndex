@@ -8,7 +8,6 @@ format:
     css: styles.css
 ---
 
-
 ## Background
 
 The northern Yellowtail STAT has identified 3 primary ways that the incorporation and evaluation of environmental indices could be improved upon for the 2025 assessment cycle, these include:
@@ -453,7 +452,7 @@ ggplot(df_index, aes(x=year, y=fit)) +
 
 The fact that the correlation between CUTI STI and yellowtail rec devs changes in 2010/2011 is suspicious given it is modeled from ROMS data and ROMS models also changed over that period. To evaluate whether this is this may be the cause of the change we looked at the time series of CUTI STI along with comparing it to Bakun derived STI to see if Bakun indices offer a reasonable alternative that may not be subject to changes in ROMS around 2010. CUTI and Bakun STI are only moderately correlated (0.52) and we don't find that there are significant differences in CUTI STI before and after 2010. Mike Jacox confirmed that there the wind data that CUTI is derived from should be stable from ROMs from at least 2000 onward. He also said he may have CUTI from GLORYs somewhere on his computer (need to follow up).
 
-From Kiva: "I included all years of "main" recruitment deviations. I would say the information quality goes down around 2010-2011, but you could use anything for playing around." This may partially explain the lack of consistency after 2010/2011
+From Kiva: "I included all years of"main" recruitment deviations. I would say the information quality goes down around 2010-2011, but you could use anything for playing around." This may partially explain the lack of consistency after 2010/2011
 
 ```{r}
 #| echo: false
@@ -531,7 +530,7 @@ Looking at this, it becomes pretty obvious that the variables with the most supp
 
 ## Multivarite GAM
 
-The univariate results are useful for looking at general fits to the data, now lets look at the multivariate results. First lets look at the patterns in some summary states across models, and compare LOO and LFO. 
+The univariate results are useful for looking at general fits to the data, now lets look at the multivariate results. First lets look at the patterns in some summary states across models, and compare LOO and LFO.
 
 ```{r}
 #| echo: false
@@ -601,11 +600,11 @@ ggplot(MIgam%>%filter(cv=="LFO"),
 
 2.  Perform model selection using LFO-CV (status: **done**)
 
-3. Evaluate marginal improvement of RMSE for multivariate GAMs and LMs (status: **done**)
+3.  Evaluate marginal improvement of RMSE for multivariate GAMs and LMs (status: **done**)
 
 4.  Evaluate non-stationary relationships between recruitment deviations and the environmental predictors with the most support to assess non-stationarity (status: **in development**)
 
-5. Develop a method for a rolling window LFO-CV to address and test challenged outlined above (status: **in development**)
+5.  Develop a method for a rolling window LFO-CV to address and test challenged outlined above (status: **in development**)
 
 6.  Fit models using regularization techniques (status: **to do**)
 
