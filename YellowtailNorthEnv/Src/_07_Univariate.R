@@ -29,7 +29,7 @@ dim(envir_data)
 summary(gam( BeutiSTIpjuv~ ONIpjuv, data=envir_data))$r.sq
 # Vector of marine covariates for univariate GAM loop
 
-covariates <- names(envir_data)#[-which(names(ocean) %in% "year")]
+covariates <- c(names(envir_data), "CutiSTIpjuv +I(CutiSTIpjuv^2)")
 
 ####### LMS ######
 
@@ -120,15 +120,18 @@ for(i in 1:length(models)) {
   }
 }
 
+X_RMSE<-results_arr%>%filter(var=='X')%>%select(RMSE)
 results_arr_LOO_LM <- arrange(results,RMSE )%>%
   rename(AIC_LOO=AIC,RMSE_LOO=RMSE, rsq_LOO=rsq)%>%
-  mutate(model="LM")
+  mutate(model="LM")%>%
+  mutate(null=X_RMSE[1,1])%>%
+  mutate(RMSE_LOO_rel=(null-RMSE_LOO)/RMSE_LOO)
 
 model_fits_LOO<-resid_df%>%
   rename(fitted_LOO=fitted, residuals_loo=residuals)
 #### lmS with leave future out cross valudation ####
 
-n_pred <- 10
+n_pred <- 5
 train_start<-1
 `%notin%` <- Negate(`%in%`)
 n_year <-length(unique(dat$year))
@@ -197,12 +200,21 @@ for (i in seq_along(covariates)) {
   
   print(i)
 }
+
+results_arr <- arrange(results,RMSE )
+X_RMSE<-results_arr%>%filter(var=='X')%>%select(RMSE)
+
 #results_arr_LFO5_lm <- arrange(results,RMSE )%>%
-#  rename(AIC_LFO5=AIC,RMSE_LFO5=RMSE, rsq_LFO5=rsq)%>%
-#  mutate(model="LM")
- results_arr_LFO10_lm <- arrange(results,RMSE )%>%
+#rename(AIC_LFO5=AIC,RMSE_LFO5=RMSE, rsq_LFO5=rsq)%>%
+#  mutate(model="LM")%>%
+ # mutate(null=X_RMSE[1,1])%>%
+#  mutate(RMSE_LFO5_rel=(null-RMSE_LFO5)/RMSE_LFO5)
+
+results_arr_LFO10_lm <- arrange(results,RMSE )%>%
 rename(AIC_LFO10=AIC,RMSE_LFO10=RMSE, rsq_LFO10=rsq)%>%
-  mutate(model="LM")
+  mutate(model="LM")%>%
+  mutate(null=X_RMSE[1,1])%>%
+  mutate(RMSE_LFO10_rel=(null-RMSE_LFO10)/RMSE_LFO10)
 # View the results data frame
 print(results_arr)
 
@@ -255,18 +267,18 @@ fitted_univariate_LMS<-rbind(predicted%>%
   rename(fitted_LFO=fits, residual_LFO=residuals)%>%
   right_join(model_fits_LOO)
 results_full_lm <-results_arr_LFO5_lm%>%
-  left_join(results_arr_LOO_LM%>%select(-ModelID))%>%
-  left_join(results_arr_LFO10_lm%>%select(-ModelID))
+  left_join(results_arr_LOO_LM%>%select(-c(ModelID,null)))%>%
+  left_join(results_arr_LFO10_lm%>%select(-c(ModelID,null)))
 
   
-write.csv(arrange(results_full_lm,RMSE_LOO),"univariateLM_Results.csv")
-
-
-write.csv(arrange(results_full,RMSE_LOO),"univariateLM_Results.csv")
+write.csv(arrange(results_full_lm,RMSE_LOO),"results-yellowtail/univariateLM_Results.csv")
 write.csv(fitted_univariate_LMS,"univariateLM_Fits.csv")
 
 ######## GAMS #######
 #### GAMS with Leave One OUt Cross Validation ####
+
+covariates <- names(envir_data)
+
 models <- list()
 results <- data.frame()
 jstart<-1
@@ -328,13 +340,6 @@ for (i in seq_along(covariates)) {
 }
 
 
-
-# filter for frowns only
-
-results_arr <- arrange(results,RMSE )
-# View the results data frame
-print(results_arr)
-
 # Forloop through model results to plot residuals for each covariate with convex
 # fit
 
@@ -353,13 +358,16 @@ for(i in 1:length(models)) {
                            "Y_Rec"=dat$Y_rec))
   }
 }
+X_RMSE<-results%>%filter(var=='X')%>%select(RMSE)
 
 results_arr_LOO_gam <- arrange(results,RMSE )%>%
-  rename(AIC_LOO=AIC,RMSE_LOO=RMSE, rsq_LOO=rsq, dev.ex_LOO=dev.ex)
+  rename(AIC_LOO=AIC,RMSE_LOO=RMSE, rsq_LOO=rsq, dev.ex_LOO=dev.ex)%>%
+  mutate(model="GAM")%>%
+  mutate(null=X_RMSE[1,1])%>%
+  mutate(RMSE_LOO_rel=(null-RMSE_LOO)/RMSE_LOO)
+
 model_fits_LOO<-resid_df%>%
   rename(fitted_LOO=fitted, residuals_loo=residuals)
-
-
 
 #### GAMS with leave future out cross valudation ####
 
@@ -431,11 +439,18 @@ predictions <-  numeric(n_pred )
  
    print(i)
 }
-  results_arr_LFO5_gam <- arrange(results,RMSE )%>%
-  rename(AIC_LFO5=AIC,RMSE_LFO5=RMSE, rsq_LFO5=rsq, dev.ex_LFO5=dev.ex)
- # results_arr_LFO10_gam <- arrange(results,RMSE )%>%
-#  rename(AIC_LFO10=AIC,RMSE_LFO10=RMSE, rsq_LFO10=rsq, dev.ex_LFO10=dev.ex)
-# View the results data frame
+X_RMSE<-results%>%filter(var=='X')%>%select(RMSE) 
+#results_arr_LFO5_gam <-arrange(results,RMSE )%>%
+#  rename(AIC_LFO5=AIC,RMSE_LFO5=RMSE, rsq_LFO5=rsq, dev.ex_LFO5=dev.ex)%>%
+#  mutate(model="GAM")%>%
+# mutate(null=X_RMSE[1,1])%>%
+#  mutate(RMSE_LFO5_rel=(null-RMSE_LFO5)/RMSE_LFO5)
+
+results_arr_LFO10_gam <-arrange(results,RMSE )%>%
+  rename(AIC_LFO10=AIC,RMSE_LFO10=RMSE, rsq_LFO10=rsq, dev.ex_LFO10=dev.ex)%>%
+ mutate(model="GAM")%>%
+  mutate(null=X_RMSE[1,1])%>%
+  mutate(RMSE_LFO10_rel=(null-RMSE_LFO10)/RMSE_LFO10)
 print(results_arr)
 
 # Forloop through model results to plot residuals for each covariate with convex
@@ -482,13 +497,13 @@ fitted_univariate_GAMS<-rbind(predicted%>%
   rename(fitted_LFO=fits, residual_LFO=residuals)%>%
   right_join(model_fits_LOO)
 results_full_gam <-results_arr_LFO5_gam%>%
-  left_join(results_arr_LOO_gam%>%select(-ModelID))%>%
-  left_join(results_arr_LFO10_gam%>%select(-ModelID))%>%
+  left_join(results_arr_LOO_gam%>%select(-c(null,ModelID)))%>%
+  left_join(results_arr_LFO10_gam%>%select(-c(null,ModelID)))%>%
   mutate(model="GAM")
 
   
-write.csv(arrange(results_full_gam,RMSE_LOO),"univariateGAM_Results.csv")
-write.csv(fitted_univariate_GAMS,"univariateGAM_Fits.csv")
+write.csv(arrange(results_full_gam,RMSE_LOO),"results-yellowtail/univariateGAM_Results.csv")
+write.csv(fitted_univariate_GAMS,"results-yellowtail/univariateGAM_Fits.csv")
 
 ######## NON_STATIONARY #######
 models <- list()
@@ -763,7 +778,7 @@ rollingplot<- ggplot(results_rolling, aes(as.factor(range), var, fill= AIC_weigh
   xlab("Time Period")+
   scale_fill_gradient(low = "white", high = "Darkgreen") +
   ylab("Oceanographic Conditions")+
-    ggtitle("Backwards Selection")+
+    ggtitle("Rolling Window")+
   geom_tile()+
   theme_bw()+
   theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
@@ -853,7 +868,7 @@ results_forewards<-results%>%mutate(range=paste(firstyear, "-", lastyear))
 
 forewards_plot <- ggplot(results_forewards, aes(as.factor(range), var, fill= AIC_weight)) + 
   xlab("Time Period")+
-  ggtitle("Foreward Selection")+
+  ggtitle("Foreward Addition")+
   scale_fill_gradient(low = "white", high = "Darkgreen") +
   ylab("Oceanographic Conditions")+
   geom_tile()+
@@ -942,7 +957,7 @@ backwards_plot <- ggplot(results_backwards, aes(as.factor(range), var, fill= AIC
   xlab("Time Period")+
   scale_fill_gradient(low = "white", high = "Darkgreen") +
   ylab("Oceanographic Conditions")+
-    ggtitle("Backwards Selection")+
+    ggtitle("Backwards Addition")+
   geom_tile()+
   theme_bw()+
   theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))

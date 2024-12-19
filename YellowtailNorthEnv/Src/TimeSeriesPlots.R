@@ -181,3 +181,54 @@ write.csv(margtop5,"results-yellowtail/Top5MarginalImprovement.csv")
 
 
 
+ggplot(univariate_lm%>%select(var,RMSE_LFO10_rel, RMSE_LOO_rel,RMSE_LFO5_rel)%>%
+  rename(LFO10=RMSE_LFO10_rel, LOO=RMSE_LOO_rel,LFO5=RMSE_LFO5_rel)%>%
+  pivot_longer(-var,names_to='Model', values_to = 'value')%>%group_by(Model)%>%mutate(rank=rank(value, ties.method="max"))%>%
+    mutate(top5=ifelse(rank>=23,1,0))%>%ungroup(), 
+  aes(x=var, y=value,fill=top5)) +
+    geom_bar(stat="identity",  alpha=.9, width=.4) +
+  facet_grid(~Model,scales = "free_x")+  
+  coord_flip() +
+  scale_fill_gradient(low ="azure2",high = "darkcyan")+
+    ylab("Percent Change in RMSE") +
+  xlab("Oceanogrpahic Conditions") +
+    theme_bw()+
+  geom_hline(yintercept=0,lty=2)+
+  ggtitle("Linear Models")+
+  theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
+ggsave("figures-yellowtail/UnivariateLmTop5.png", height = 8, width = 10)
+
+ggplot(univariate_gam%>%select(var,RMSE_LFO10_rel, RMSE_LOO_rel,RMSE_LFO5_rel)%>%
+  rename(LFO10=RMSE_LFO10_rel, LOO=RMSE_LOO_rel,LFO5=RMSE_LFO5_rel)%>%
+  pivot_longer(-var,names_to='Model', values_to = 'value')%>%group_by(Model)%>%mutate(rank=rank(value, ties.method="max"))%>%
+    mutate(top5=ifelse(rank>=22,1,0))%>%ungroup(), 
+  aes(x=var, y=value,fill=top5)) +
+    geom_bar(stat="identity",  alpha=.9, width=.4) +
+  facet_grid(~Model,scales = "free_x")+  
+  coord_flip() +
+    ggtitle("Generalized Additive Models")+
+  scale_fill_gradient(low ="azure2",high = "darkcyan")+
+    ylab("Percent Change in RMSE") +
+  xlab("Oceanogrpahic Conditions") +
+    theme_bw()+
+  geom_hline(yintercept=0,lty=2)+
+  theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
+ggsave("figures-yellowtail/UnivariateGamTop5.png", height = 8, width = 10)
+
+univariate_full<-univariate_gam%>%bind_rows(univariate_lm)
+
+ggplot(data=univariate_full%>%select(var,model,rsq_LFO10, rsq_LOO,rsq_LFO5)%>%
+  rename(LFO10=rsq_LFO10, LOO=rsq_LOO,LFO5=rsq_LFO5)%>%
+  pivot_longer(-c(var,model),names_to='cv', values_to = 'value'), 
+  aes(x=value, y=var, group=cv))+
+  facet_wrap(~model)+
+  geom_point(aes(col=cv),size=2.5)+
+  xlim(c(-0.25,0.75))+
+  ylab("Oceanographic Conditions")+
+  xlab("R squared")+
+ # ggtitle("Generalized Additive Models")+
+ theme_classic()+
+   geom_vline(xintercept = 1, 
+             color = "grey", linetype = "dashed", size = 1) +
+  theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
+ggsave("figures-yellowtail/UnivariateRsquared.png", height = 6, width = 10)

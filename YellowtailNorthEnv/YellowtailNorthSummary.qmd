@@ -1,55 +1,107 @@
 ---
 title: "YellowtailNorthSummary"
-format: pdf
+format: pdf 
+toc: true
 editor: visual
 ---
 
-## A.1 Oceanographic indicators of northern Yellowtail
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
 
-Darby et al. In Prep examined the relationship between recruitment deciations from the 2017 northern Yellowtail rockfish assessment (Taylor et al. 2017) following methods of Haltuch et al. 2020. The oceanographic conditions investigated were based on an extensive literature review of conditions impacting northern Yellowtail rockfish throughout different lifestages linked to recruitment. Previous assessments used Regional Ocean Modeling System (ROMS) but Petrale 2023 identified inconsistencies in oceanographic conditions impacting groundfish recruitment. We used an alternative model, Global Ocean Physics Reanalysis (GLORYS), for conditions that were identified to have inconsistencies in the 2023 Petrale Sole assessment (citation) and which was used for the Pacific hake assessment (citation). Upwelling conditions were not available from GLORYs and thus a ROMs upwelling time series was used.
 
-The study area encompassed the region from Xlat to Ylat in teh California Current Ecosystem with individual predictors limited by depth and/or distance from the shore (Table X). Model selection resulted in a single model with four oceanographic varibles explaining 65% of the deviation in recruitmnet deviations. Recruitment deviations were:
+library(bayesdfa)
+library(tidyverse)
+library(ggplot2)
+library(readr) # faster writing
+library(data.table) # faster writing of large files
+library(lubridate)
+library(mgcv)
+library(MuMIn)
+library(corrplot)
+library(car)
+library(ggpubr)
+library(fst)
+library(viridis)
+library(dplyr)
+library(kableExtra)
+
+
+```
+
+##  Oceanographic indicators of northern Yellowtail
+
+Darby et al. In Prep examined the relationship between recruitment deciations from the 2017 northern Yellowtail rockfish assessment (Taylor et al. 2017) following methods of Haltuch et al. 2020. The oceanographic conditions investigated (@tbl-tab1) were based on an extensive literature review of  conditions impacting northern Yellowtail rockfish throughout different lifestages linked to recruitment. Previous assessments used Regional Ocean Modeling System (ROMS) but Petrale 2023 identified inconsistencies in oceanographic conditions impacting groundfish recruitment. We used an alternative model, Global Ocean Physics Reanalysis (GLORYS), for conditions that were identified to have inconsistencies in the 2023 Petrale Sole assessment (citation) and which was used for the Pacific hake assessment (citation). Upwelling conditions were not available from GLORYs and thus a ROMs upwelling time series was used.
+
+The study area encompassed the region from Xlat to Ylat in teh California Current Ecosystem with individual predictors limited by depth and/or distance from the shore (@tbl-tab1). Model selection resulted in a single model with four oceanographic varibles explaining 65% of the deviation in recruitmnet deviations. Recruitment deviations were:
 
 (1) Negatively associated with later spring transition of the upwelling season derived from the Coastal Upwelling Transport Index (CutiSTIpjuv)
-
-(2) Recruitment is maximized when mixed layer depth at the larval stage (MLDlarv) is one standard deviation above average
-
+(2) Recruitment is maximized when mixed layer depth at the larval stage (MLDlarv) is one standard deviation above average 
 (3) Recruitment is maximized when HCI during the larval stage (HCIlarv) is at average values
 
-(4) Recruitment is maximized when long-shore transport during the larval stage (LSTlarv) is above or below average.
+(4) Recruitment is maximized when long-shore transport during the larval stage (LSTlarv) is above or below average. 
 
-These results indicate that output from oceanographic models might be a useful basis for an environmental index of recruitment for northern Yellowtail rockfish to allow for better model precision and near-term forecasting. However, the conditions that are most important for northern Yellowtail recruitment vary through time, and as a result so does the predictive capacity of individual
+These results indicate that output from oceanographic models might be a useful basis for an environmental index of recruitment for northern Yellowtail rockfish to allow for better model precision and near-term forecasting. Single oceanogrphic conditions that are most important for northern Yellowtail recruitment vary through time, and as a result so does the predictive capacity of individual predictors. This highlights the values of using multiple environmental conditions in a single index.
 
-## Running Code
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+## Oceanographic predictors of northern Yellowtail recruitment
 
-```{r}
-1 + 1
-```
+Oceanographic conditions (@tbl-tab1) linked to northern Yellowtail recruitment fall into three primary categories: temperature, transit, and upwelling (@fig-oceanographicts1), many of which convary within each grouping (@fig-oceanographicts2)
 
-You can add options to executable code like this
 
+![Time series of oceanographic conditions associated with northern Yellowtail rockfish recruitment](figures-yellowtail/Env_TimeSeries.png){#fig-oceanographicts1}
+
+![OceanographicTS2](figures-yellowtail/EnvironmnetalIndices.png){#fig-oceanographicts2}
+
+## Univariate Analysis
+
+Univariate linear models and generalized additive models were used to understand the relative importance of single drivers for model fit and predictive capacity of oceanographic conditions on northern Yellowtail rockfish recruitment. We compared models with a single covariate using leave-one-out cross validation (LOO-CV) and leave-future-out cross validation (LFO-CV). We considered two ways of looking at LFO-CV, leaving the last 10 years of data out of the model and predicting one year ahead and leaving only the last 5 years of data out of the model and predicting one year ahead. Models were ranked based on the improvement of root mean square error (RMSE) relative to a model using year of observation as a predictor, such that the next year is predicted based on the previous year.
+
+For linear model approaches, we find that the improvement in RMSE depends on selection criteria used (@fig-lmtop5). When applying LOO-CV, only five oceanographic conditions improved RMSE relative to a year predictor. T~cop~, MLD~part~, MLD~larv~, DD~pre~, and CutiSTI~pjuv~^2^ were the top 5 oceanographic conditions for predicting recruitment ranging from 2.5% - 12.5% improvement in relative RMSE. 10-year LFO-CV had similar results, where MLD~part~, MLD~larv~, DD~pre~, DD~egg~,and CutiSTI~pjuv~^2^ were the top 5 predictors.Relative RMSE improvement was much higher using LFO-CV, where nearly all oceanogrpahic conditions had better predictive capacity than a year-only model and relative RMSE improvement ranging from 9% - 26% among the top 5 best oceanographic conditions (@fig-lmtop5). 5-year LFO-CV had the highest improvement in RMSE relative to the year model, ranging from 68% - 80% improvement, but the best oceanographic predictors of recruitment were different than the 10-year LFO-CV and LOO-CV. The only condition that ranked in the top 5 for all selection criteria was  DD~pre~. T~part~,PDO~larv~, HCI~larv~,and DD~larv~ were also ranked in the top 5 predictors using 10-year LFO-CV. This highlights the importance of temperature variables for predicting the last 5 years of data relative to transport or upwelling. Notably, the last 5 years of data in this analysis were 2009 - 2014,which encompasses the beginning of abnormally warm heatwave which began in December, 2013. The relative importance of temperature compared to other oceanographic conditions like settlement will be important to examine as new recruitment deviations become available.  
+
+For generalized additive models, the top supported oceanographic drivers were identical to the top oceanographic conditions for linear models by selection criteria, where the 5-year LFO-CV had more support for temperature conditions as predictors (#fig-gamtop5). 
+
+![The top 5 ranked covariates for linear models using LOO-CV and LFO-CV predicting the last 5 and 10 years of data. RMSE impovement is relative to a using year only. Darker color indicates the top 5 ranked models](figures-yellowtail/UnivariateLmTop5.png){#fig-lmtop5}
+
+![The top 5 ranked covariates for generalized additive models using LOO-CV and LFO-CV predicting the last 5 and 10 years of data. RMSE impovement is relative to a using year only. Darker color indicates the top 5 ranked models](figures-yellowtail/UnivariateGamTop5.png){#fig-gamtop5}
+### Time-varying model fits
+
+The differences in which covariates have the most support in univariate models indicates the relative strength of different oceanographic conditions to predict recruitment of northern Yellowtail rockfish likely varies through time. To further evaluate these time varying effects we used AIC weights with three approaches to evaluating the time-varying importance, 1) a 10-year rolling window, 2) forward addition of 1-year starting with first ten years of data (1993 - 2002) and 3) backwards addition of 1-year starting with the last ten years of data (2014 - 2005). We applied these approaches using generalized additive models. 
+
+The 10-year rolling window illustrates which variables improve model fit the most over different time periods. @fig-rolling shows LST~larv~ and MLD~larv~ were important in the early time periods became less important in the middle time period, and more important in recent years. In contrast, ONI~pre~ was most important during the middle windows. MLD~pjuv~ became more important in the recent windows. Notably, AIC weight became more evenly distributed across oceanographic conditions for the most recent windows, with more AIC weight allocated to temperature variables. 
+
+The foreward addition approach shows changes in the relative importance of oceanographic conditions for model fit 
+
+
+![AIC weight for each oceanographic variable for 10-year time periods between 1003 and 2014](figures-yellowtail/rolling_gam.png){#fig-rolling}
 ```{r}
 #| echo: false
-2 * 2
+#| warning: false
+#| label: tbl-tab1
+#| tbl-cap: "Oceanographic Conditions"
+
+LifeHistoryTab<-read.csv("data-yellowtail/RockfishLifeHistoryTables.csv")
+#pander::pander(LifeHistoryTab, split.cell = 80, split.table = Inf)
+LifeHistoryTab %>% 
+  knitr::kable(
+    format = "latex",
+    booktabs = TRUE,
+    longtable = TRUE,
+    linesep = "",
+    align = "l",
+    escape = FALSE
+    ) %>%
+  kableExtra::kable_styling(
+      position = "left",
+      latex_options = c("striped", "repeat_header"),
+      stripe_color = "gray!15"
+    )%>%
+  column_spec(1, width = "5em")%>%
+  column_spec(2, width = "5em")%>%
+  column_spec(3, width = "3em")%>%
+  column_spec(4, width = "10em")%>%
+  column_spec(5, width = "5em")%>%
+  column_spec(6, width = "5em")%>%
+  column_spec(7, width = "5em")
 ```
-
-The `echo: false` option disables the printing of code (only output is displayed).
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
-
-You can add options to executable code like this
-
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
