@@ -39,7 +39,6 @@ combinations <- lapply(1:3, function(i) {
   combn(covariates, i, simplify = FALSE)
 })
 combinations <- unlist(combinations, recursive = FALSE)
-# Sort each combination and remove duplicates
 combinations <- unique(lapply(combinations, function(x) sort(x)))
 
 length(combinations)
@@ -85,7 +84,7 @@ combinations_to_omit <- list(
   c("CutiTUMIpjuv", "dfa"),
   c("BeutiTUMIpjuv", "dfa"),
   c("BeutiSTIpjuv", "dfa")) 
- 
+
 colnames(envir_data) 
 # Function to check if a combination is a partial match of any combination to omit
 is_partial_match <- function(comb, omit_list) {
@@ -97,7 +96,7 @@ combinations <- combinations[!sapply(combinations, is_partial_match, omit_list =
 
 # Check the length of remaining combinations
 length(combinations)
-
+# Sort each combination and remove duplicates
 
 cross_validation <-TRUE
 models <- list()

@@ -126,7 +126,7 @@ ggplot(data=marginal, aes(x=total_rmse, y=cov, group=cv))+
 
 marginal2<-rbind(marginal_gam,marginal_lm,marginal_NS)%>%
   mutate(RMSE_perc=1-total_rmse)%>%
-  filter(RMSE_perc>0)%>%
+#  filter(RMSE_perc>0)%>%
   left_join(data_types)
 
 ggplot(marginal2%>%
@@ -141,7 +141,7 @@ ggplot(marginal2%>%
   theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
 ggsave("figures-yellowtail/MarginalImprovementv1.png", height = 8, width = 10)
 
-marginal3<-rbind(marginal_gam,marginal_lm,marginal_NS)%>%
+marginal3<-rbind(marginal_gam,marginal_lm)%>%
   mutate(RMSE_perc=1-total_rmse)%>%
   #filter(RMSE_perc>0)%>%
   left_join(data_types)
