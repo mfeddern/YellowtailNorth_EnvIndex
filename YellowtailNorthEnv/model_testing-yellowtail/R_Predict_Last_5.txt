@@ -1,0 +1,24 @@
+
+Call:
+lm(formula = as.formula(m1), data = dat[dat$year %in% short_years, 
+    ])
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.32219 -0.11841 -0.00052  0.10462  0.38183 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      -0.48789    0.58246  -0.838 0.421808    
+ONIpre           -0.46445    0.09641  -4.818 0.000705 ***
+CutiSTIpjuv      -0.31779    0.08245  -3.854 0.003190 ** 
+I(CutiSTIpjuv^2) -0.32138    0.07366  -4.363 0.001415 ** 
+HCIlarv          -0.97289    0.28040  -3.470 0.006025 ** 
+MLDpart           0.07779    0.03413   2.279 0.045859 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.2373 on 10 degrees of freedom
+Multiple R-squared:  0.8518,	Adjusted R-squared:  0.7777 
+F-statistic:  11.5 on 5 and 10 DF,  p-value: 0.0006882
+

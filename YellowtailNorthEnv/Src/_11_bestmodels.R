@@ -13,6 +13,7 @@ library(fst)
 library(viridis)
 library(ggbeeswarm)
 library(gratia)
+library(gridExtra)
 
 #### Best LMs ####
 
@@ -57,7 +58,7 @@ ggsave("figures-yellowtail/lmloo.png", height = 8, width = 10)
 lmlfo5<-lm(Y_rec~DDben+DDpre+HCIpjuv, data=dat)
 lmlfo5.vif<-tableGrob(data.frame(VIF=round(vif(lmlfo5),2)))
 vif(lmlfo5)
-lmlfo5.predict <- cbind(dat, predict(lmlfo5, interval = 'confidence'), residuals= residuals(lmlfo10))
+lmlfo5.predict <- cbind(dat, predict(lmlfo5, interval = 'confidence'), residuals= residuals(lmlfo5))
 
 lmlfo5.plot<- ggplot(lmlfo5.predict, aes(year, Y_rec)) +
   geom_point() +
@@ -259,10 +260,10 @@ g3 <- ggplot(resid_df, aes(year,fitted)) +
 g3
 
 
-### Best ###
+#### Best Overall ####
 
-best.gam<-gam(Y_rec~s(ONIpre,k=3)+s(CutiSTIpjuv,k=3)+s(MLDpart,k=3)+s(LSTlarv,k=3), data=dat)
-best.gam.vif<-tableGrob(data.frame(VIF=round(vif(lm(Y_rec~ONIpre+CutiSTIpjuv+MLDpart+LSTlarv, data=dat)
+best.gam<-gam(Y_rec~s(HCIlarv,k=3)+s(CutiSTIpjuv,k=3)+s(MLDlarv,k=3)+s(LSTlarv,k=3), data=dat)
+best.gam.vif<-tableGrob(data.frame(VIF=round(vif(lm(Y_rec~HCIlarv+CutiSTIpjuv+MLDlarv+LSTlarv, data=dat)
 ),2)))
 best.gam.predict <- cbind(dat, predict.gam(best.gam,se.fit=TRUE), residuals= residuals(best.gam))
 
@@ -272,7 +273,7 @@ best.gam.plot<- ggplot(best.gam.predict, aes(year, Y_rec)) +
   geom_ribbon(aes(ymax=fit+2*se.fit, ymin=fit-2*se.fit), 
               alpha=0.2)+
   theme_bw() +
-  labs(title=paste("gam, LFO10: Deviance Explained = ",round(summary(best.gam)$dev.expl,2)), subtitle=formula(best.gam),
+  labs(title=paste("Best GAM Deviance Explained = ",round(summary(best.gam)$dev.expl,2)), subtitle=formula(best.gam),
        x="Year", y="Recruitment Deviations")+
   theme(strip.text = element_text(size=6),
         strip.background = element_rect(fill="white"),
@@ -298,9 +299,9 @@ ggsave("figures-yellowtail/gambest.png", height = 8, width = 10)
 
 
 
-best.lm<-lm(Y_rec~ONIpre+CutiSTIpjuv+I(CutiSTIpjuv^2)+HCIlarv+MLDpart, data=dat)
+best.lm<-lm(Y_rec~LSTlarv+I(LSTlarv^2)+CutiSTIpjuv+I(CutiSTIpjuv^2)+HCIlarv+MLDlarv, data=dat)
 summary(best.lm)
-best.lm.vif<-tableGrob(data.frame(VIF=round(vif(lm(Y_rec~ONIpre+CutiSTIpjuv+MLDpart+HCIlarv, data=dat)
+best.lm.vif<-tableGrob(data.frame(VIF=round(vif(lm(Y_rec~LSTlarv+CutiSTIpjuv+MLDlarv+HCIlarv, data=dat)
 ),2)))
 best.lm.predict <-cbind(dat, predict(best.lm, interval = 'confidence'), residuals= residuals(best.lm))
 best.lm.plot<- ggplot(best.lm.predict, aes(year, Y_rec)) +
@@ -333,6 +334,47 @@ ggarrange(best.lm.plot, ggarrange(best.lm.res,best.lm.vif, ncol=2),nrow=2)+ bgco
 
 ggsave("figures-yellowtail/lmbest.png", height = 8, width = 10)
 
+cuti<- ggplot(dat, aes(CutiSTIpjuv, Y_rec)) + 
+  geom_point() + 
+  xlab('CutiSTIpjuv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x + I(x^2), 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(CutiSTIpjuv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+lst <-ggplot(dat, aes(LSTlarv, Y_rec)) + 
+  geom_point() + 
+  xlab('LSTlarv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x + I(x^2), 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(LSTlarv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+
+hci<-ggplot(dat, aes(HCIlarv, Y_rec)) + 
+  geom_point() + 
+  xlab('HCIlarv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x, 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(HCIlarv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+mld<-ggplot(dat, aes(MLDpart, Y_rec)) + 
+  geom_point() + 
+  xlab('MLDpart') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x, 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(MLDpart,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+ggarrange(hci,lst,cuti,mld, nrow=2, ncol=2)
+
+ggsave("figures-yellowtail/partieleffects.png", width = 11, height =  8)       
+
 
 
 df.subset <- envir_data[, names(envir_data)[(names(envir_data) %in% unique(margtop5$cov))]]
@@ -347,3 +389,209 @@ vif(best_lm)
 summary(best_lm)
 plot.gam(best)
 draw(best, transform = "response", cex = 2)
+
+#### Diagnostic Plots ####
+
+##### Linear Model Diagnostics #####
+
+
+m1=lm(Y_rec~LSTlarv+I(LSTlarv^2)+CutiSTIpjuv+I(CutiSTIpjuv^2)+HCIlarv+MLDpart, data=dat)
+#m1=lmlfo5
+(s1 = summary(m1))
+capture.output(s1,file="R_Core.Model.txt")
+
+png("figures-yellowtail/lmdiag.png",width=8,height=8,units="in",res=1200)
+par(mfrow=c(2,2))
+plot(m1)
+dev.off()
+
+##### Predict last 5 years ####
+
+predict5 = c()
+predict5$year = forecast_years
+predict5 = data.frame(predict5)
+predict5$pred = NA
+head(predict5)
+
+predictfit = c()
+predictfit$year = short_years
+predictfit = data.frame(predictfit)
+predictfit$pred = NA
+head(predictfit)
+
+m1 = lm(as.formula(m1), data=dat[dat$year %in% short_years,])
+NewData = data.frame(dat[dat$year %in% forecast_years,])
+predict5[,'pred'] = predict(m1, newdata = NewData, interval = 'confidence')
+predict5
+write.table(predict5,paste0(results_dir, 'D_Predict_Last_5.csv'),col.names=TRUE, row.names=FALSE,sep=',')
+s1 = summary(m1)
+
+capture.output(s1, file = 'R_Predict_Last_5.txt')
+saveRDS(s1,file='R_Predict_Last_5.rds')
+
+
+predict5<-cbind(predict5, predict(m1, newdata = NewData, interval = 'confidence'))
+predictfit<-cbind(predictfit, predict(m1, newdata = dat[dat$year %in% short_years,], interval = 'confidence'))
+ggplot(predictfit, aes(x=year, y=fit)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymin = lwr, ymax = upr), 
+              color='grey', alpha = 0.05) + 
+  xlab("Year") + ylab('ln (rec devs)') + 
+  geom_point(data=dat,aes(year,Y_rec)) + 
+ #  geom_ribbon(data=dat,aes(x=year, y=Y_rec,ymin = Y_rec-sd, ymax = Y_rec+sd), 
+ #             color='grey',fill='white', alpha = 0.05) +
+  geom_line(data=predict5,aes(x=year, y=fit),col='red')+ 
+  geom_point(data=predict5,aes(year,fit),col='red') + 
+    geom_ribbon(data=predict5,aes(ymin = lwr, ymax = upr), 
+              color='pink',fill='pink', alpha = 0.05)+
+  theme_bw()
+
+ggsave("figures-yellowtail/lm5pred.png",
+       height=2.0, width = 3.5)
+
+##### GAM Diag #####
+
+m2 = gam(Y_rec~s(LSTlarv,k=3)+s(CutiSTIpjuv,k=3)+s(MLDlarv,k=3)+s(HCIlarv,k=3), data=dat)
+
+png("figures-yellowtail/gamdiag.png",width=8,height=8,units="in",res=1200)
+par(mfrow=c(2,2))
+gam.check(m2)
+dev.off()
+
+dat$cooks.distance <- cooks.distance(m2)
+dat$leverage <-influence.gam(m2)
+dat$residuals.standard <- scale(residuals.gam(m2))
+n <- length(residuals)  # Number of data points
+influence  <- dat[(dat$cooks.distance> 4 / n |dat$cooks.distance> 1|dat$cooks.distance> 0.5),]
+
+
+ggplot(dat, aes(x = leverage, y = residuals.standard)) +
+  geom_hline(yintercept = 3, linetype = 'dotted') +
+  geom_vline(xintercept = 2* mean(dat$leverage), linetype = 'dotted') +
+  geom_point(alpha = 0.2) +
+  ylab("Standardized Residuals")+
+  xlab("Leverage")+
+  geom_point(data = influence, aes(x = leverage, y = residuals.standard), color = 'darkorange') +
+theme_minimal() +  # Clean theme
+  theme(
+    plot.title = element_text(hjust = 0.5),  # Center plot title
+    axis.title = element_text(size = 12),    # Axis title size
+    axis.text = element_text(size = 10)      # Axis text size
+  ) +
+  geom_text(aes(label=ifelse(leverage > 4 / n, year, "")), cex=3, hjust=1.1)
+ggsave("figures-yellowtail/gamleverage.png",
+       height=2.0, width = 3.5)
+
+
+
+predict5 = c()
+predict5$year = forecast_years
+predict5 = data.frame(predict5)
+predict5$pred = NA
+head(predict5)
+
+predictfit = c()
+predictfit$year = short_years
+predictfit = data.frame(predictfit)
+predictfit$pred = NA
+head(predictfit)
+
+m2 = gam(as.formula(m2), data=dat[dat$year %in% short_years,])
+NewData = data.frame(dat[dat$year %in% forecast_years,])
+predict5= data.frame(predict.gam(m2, newdata = NewData, se.fit=TRUE))
+predict5<-cbind(NewData, predict5)
+predictfit<-data.frame(predict.gam(m2, se.fit=TRUE, newdata = dat[dat$year %in% short_years,]))
+predictfit<-cbind(predictfit,dat[dat$year %in% short_years,])
+ggplot(predictfit, aes(x=year, y=fit)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymin = fit-2*se.fit, ymax = fit+2*se.fit), 
+              color='grey', alpha = 0.05) + 
+  xlab("Year") + ylab('ln (rec devs)') + 
+  geom_point(data=dat,aes(year,Y_rec)) + 
+  geom_line(data=predict5,aes(x=year, y=fit),col='red')+ 
+  geom_point(data=predict5,aes(year,fit),col='red') + 
+    geom_ribbon(data=predict5,aes(ymin = fit-2*se.fit, ymax = fit+2*se.fit), 
+              color='pink',fill='pink', alpha = 0.05)+
+  theme_bw()
+
+ggsave("figures-yellowtail/gam5pred.png",
+       height=2.0, width = 3.5)
+
+
+
+png("figures-yellowtail/gampartial.png",width=8,height=8,units="in",res=1200)
+par(mfrow=c(2,2))
+plot.gam(m2, residuals=TRUE,se=TRUE)
+dev.off()
+
+
+#### An alternative best model ####
+peplot <- function(mod,var,ci=.95, plot_points = "n",
+                   xlab=var,ylab=names(mod[12]$model)[1],
+                   main="Partial Effect Plot",
+                   pe_lty=1,pe_lwd=3,pe_col="black",
+                   ci_lty=1,ci_lwd=1,ci_col="black",
+                   pch_col="black",pch_ty=19,
+                   ylim=c(min(pred[,"lwr"]),max(pred[,"upr"]))){
+  modDat <- mod[12]$model
+  modDat1 <- modDat[,-1]
+  modDat2 <- modDat[,which(names(modDat)!=var)]
+  x <- resid(lm(modDat1[,var] ~., data=modDat1[,which(names(modDat1)!=var)]))
+  y <- resid(lm(modDat2[,1] ~ ., modDat2[,-1]))
+  plot(x,y,type=plot_points,xlab=xlab,ylab=ylab,
+       ylim=ylim,col=pch_col,pch=pch_ty,
+       main=main)
+  part <- lm(y~x)
+  wx <- par("usr")[1:2]
+  new.x <- seq(wx[1],wx[2],len=100)
+  pred <- predict(part, new=data.frame(x=new.x), interval="conf",
+                  level = ci)
+  lines(new.x,pred[,"fit"],lwd=pe_lwd,lty=pe_lty,col=pe_col)
+  lines(new.x,pred[,"lwr"],lwd=ci_lwd,lty=ci_lty,col=ci_col)
+  lines(new.x,pred[,"upr"],lwd=ci_lwd,lty=ci_lty,col=ci_col)
+}
+
+peplot(best.lm,var="LSTlarv",plot_points="p",ylim=NULL,pch_col="steelblue",ci_lty=2,
+       xlab="Horsepower",ylab="Miles per Gallon")
+peplot(best.lm,var="I(LSTlarv^2)",plot_points="p",ylim=NULL,pch_col="steelblue",ci_lty=2,
+       xlab="Horsepower",ylab="Miles per Gallon")
+peplot(best.lm,var="HCIlarv",plot_points="p",ylim=NULL,pch_col="steelblue",ci_lty=2,
+       xlab="Horsepower",ylab="Miles per Gallon")
+
+
+cuti<- ggplot(dat, aes(CutiSTIpjuv, Y_rec)) + 
+  geom_point() + 
+  xlab('CutiSTIpjuv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x + I(x^2), 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(CutiSTIpjuv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+lst <-ggplot(dat, aes(LSTlarv, Y_rec)) + 
+  geom_point() + 
+  xlab('LSTlarv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x + I(x^2), 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(LSTlarv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+
+hci<-ggplot(dat, aes(HCIlarv, Y_rec)) + 
+  geom_point() + 
+  xlab('HCIlarv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x, 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(HCIlarv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()
+
+ggplot(dat, aes(DDlarv, Y_rec)) + 
+  geom_point() + 
+  xlab('DDlarv') + ylab("ln Rec Devs") + 
+  geom_smooth(method = lm, formula=y ~ x, 
+              color='black', fill='grey90') +
+  ggrepel::geom_text_repel(data=dat,
+    aes(DDlarv,Y_rec, label= year), color = "black", size = 3) +
+  theme_classic()

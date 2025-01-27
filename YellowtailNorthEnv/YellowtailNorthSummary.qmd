@@ -1,6 +1,6 @@
 ---
 title: "Oceanographic Drivers of northern Yellowtail"
-format: html 
+format: pdf 
 toc: true
 editor: visual
 ---
@@ -29,30 +29,37 @@ library(kableExtra)
 
 
 ```
+## Northern Yellowtail Recruitment
+
+Fully informed recruitment deviations from the 2017 northern Yellowtail stock assessment (Taylor et al. 2017) begin around 1976/1977. Recruitment deviations are available through 2014, but information quality starts to go down around 2010/2011. This can be seen in @fig-recdev where the uncertainty increases dramatically in 2011. Oceanographic data from GLORYs is first available in 1993. For the purposes of this investigation, model fitting was performed using data from 1993 - 2014. Notably, the decline in information quality can have an influence on the model selection process, particularly cross validation approaches that leave out the last 5 or 10 years. 
+
+![Norhtern Yellowtail rockfish recruitment deviations from 1993 - 2014. Shaded region represents 2 SEs ](figures-yellowtail/RecDev_TimeSeries.png){#fig-recdev}
 
 ## Oceanographic indicators of northern Yellowtail
 
-Darby et al. In Prep examined the relationship between recruitment deciations from the 2017 northern Yellowtail rockfish assessment (Taylor et al. 2017) following methods of Haltuch et al. 2020. The oceanographic conditions investigated (@tbl-tab1) were based on an extensive literature review of conditions impacting northern Yellowtail rockfish throughout different lifestages linked to recruitment. Previous assessments used Regional Ocean Modeling System (ROMS) but Petrale 2023 identified inconsistencies in oceanographic conditions impacting groundfish recruitment. We used an alternative model, Global Ocean Physics Reanalysis (GLORYS), for conditions that were identified to have inconsistencies in the 2023 Petrale Sole assessment (citation) and which was used for the Pacific hake assessment (citation). Upwelling conditions were not available from GLORYs and thus a ROMs upwelling time series was used.
+Darby et al. In Prep examined the relationship between recruitment deciations from the 2017 northern Yellowtail rockfish assessment (Taylor et al. 2017) following methods of Haltuch et al. 2020. The oceanographic conditions investigated (@tbl-tab1) were based on an extensive literature review of conditions impacting northern Yellowtail rockfish throughout different lifestages linked to recruitment. Previous assessments used Regional Ocean Modeling System (ROMS) but Petrale 2023 identified inconsistencies in oceanographic conditions impacting groundfish recruitment. We used an alternative model, Global Ocean Physics Reanalysis (GLORYS), for conditions that were identified to have inconsistencies in the 2023 Petrale Sole assessment (citation) and which was used for the 2024 Pacific hake assessment (citation). Upwelling conditions were not available from GLORYs and thus a ROMs upwelling time series were used.
 
-The study area encompassed the region from Xlat to Ylat in teh California Current Ecosystem with individual predictors limited by depth and/or distance from the shore (@tbl-tab1). Model selection resulted in a single model with four oceanographic varibles explaining 65% of the deviation in recruitmnet deviations. Recruitment deviations were:
+The study area encompassed the region from 40N – 48N in the California Current Ecosystem with individual predictors limited by depth and/or distance from the shore (@tbl-tab1). Model selection resulted in a single model with four oceanographic varibles explaining 65% of the deviation in recruitmnet deviations. Recruitment deviations were:
 
 (1) Negatively associated with later spring transition of the upwelling season derived from the Coastal Upwelling Transport Index (CutiSTIpjuv)
 
-(2) Recruitment is maximized when mixed layer depth at the larval stage (MLDlarv) is one standard deviation above average
+(2) Recruitment is maximized when mixed layer depth at the larval stage (MLDpart) is one standard deviation above average
 
 (3) Recruitment is maximized when HCI during the larval stage (HCIlarv) is at average values
 
 (4) Recruitment is maximized when long-shore transport during the larval stage (LSTlarv) is above or below average.
 
-These results indicate that output from oceanographic models might be a useful basis for an environmental index of recruitment for northern Yellowtail rockfish to allow for better model precision and near-term forecasting. Single oceanogrphic conditions that are most important for northern Yellowtail recruitment vary through time, and as a result so does the predictive capacity of individual predictors. This highlights the values of using multiple environmental conditions in a single index.
+These results indicate that output from oceanographic models might be a useful basis for an environmental index of recruitment for northern Yellowtail rockfish to allow for better model precision and near-term forecasting. Single oceanogrphic conditions that are most important for northern Yellowtail recruitment vary through time, and as a result so does the predictive capacity of individual predictors. This highlights the values of using multiple environmental conditions in a single index, but also the challenge in appropriately specifying models and evaluating performance.
 
 ## Oceanographic predictors of northern Yellowtail recruitment
 
-Oceanographic conditions (@tbl-tab1) linked to northern Yellowtail recruitment fall into three primary categories: temperature, transit, and upwelling (@fig-oceanographicts1), many of which convary within each grouping (@fig-oceanographicts2)
+Oceanographic conditions (@tbl-tab1) linked to northern Yellowtail recruitment fall into three primary categories: temperature, transit, and upwelling (@fig-oceanographicts1), many of which covary within each grouping (@fig-oceanographicts2)
 
 ![Time series of oceanographic conditions associated with northern Yellowtail rockfish recruitment](figures-yellowtail/Env_TimeSeries.png){#fig-oceanographicts1}
 
 ![OceanographicTS2](figures-yellowtail/EnvironmnetalIndices.png){#fig-oceanographicts2}
+
+{{< pagebreak >}}
 
 ## Univariate Analysis
 
@@ -65,6 +72,8 @@ For generalized additive models, the top supported oceanographic drivers were id
 ![The top 5 ranked covariates for linear models using LOO-CV and LFO-CV predicting the last 5 and 10 years of data. RMSE impovement is relative to a using year only. Darker color indicates the top 5 ranked models](figures-yellowtail/UnivariateLmTop5.png){#fig-lmtop5}
 
 ![The top 5 ranked covariates for generalized additive models using LOO-CV and LFO-CV predicting the last 5 and 10 years of data. RMSE impovement is relative to a using year only. Darker color indicates the top 5 ranked models](figures-yellowtail/UnivariateGamTop5.png){#fig-gamtop5} 
+
+{{< pagebreak >}}
 
 ### Time-varying model selection
 
@@ -82,9 +91,11 @@ Using the backwards addition approach helps us examine which data are most infor
 
 ![AIC weight for each oceanographic variable starting with the most recent 10 years (2004 - 2014) and iteratively adding one year of data to the model selection](figures-yellowtail/backwards_gam.png){#fig-backward}
 
+{{< pagebreak >}}
+
 ## Multivariate Analysis
 
-### Marginal Mean Improvement
+### Marginal Mean Improvement RMSE
 
 After examining the fits and dynamics of univariate models, we examined the model fits and predictive capacity using the same cross validation techniques as the univariate approach. We calculated variable importance scores as the mean marginal improvement in RMSE for each cross validation technique. Marginal improvements in RMSE are dependent on both information in a predictor, as well as redundancy in information across predictors (e.g. if variable x and y are in a model, and z is highly correlated with x, adding z to a model will not improve RMSE). For any potential covariate considered in models with m predictors, we used the set of n models with m − 1 predictors that did not include that covariate as a baseline, and for each calculated the average relative change in RMSE. We fit all possible combinations of up to 3 covariates while excluding combinations that are highly correlated from being included in the same model. 
 
@@ -93,6 +104,8 @@ We show the percent change in RMSE in @fig-RMSE for all covariates and for the t
 ![Marginal mean improvement in RMSE represented as the percent change in RMSE by adding in an specific oceanographic condition to the model](figures-yellowtail/MarginalImprovementv1.png){#fig-RMSE}
 
 ![Top 5 oceanographic conditions for improving RMSE based on medle type and cross validation approach](figures-yellowtail/MarginalImprovementTop5.png){#fig-RMSE5}
+
+{{< pagebreak >}}
 
 ### Best Models with up to 3 covariates
 
@@ -112,22 +125,100 @@ When applying LFO-10 to linear models the top performing model included MLD~pjuv
 
 ![Best performing linear model using LFO-10](figures-yellowtail/lmlfo10.png){#fig-lmlfo10}
 
+{{< pagebreak >}}
+
 #### Generalized Additive Models
 
+When applying LOO to GAMs the top performing model included HCI~larv~, PDO~pjuv~ and LST~larv~. This model explained 56% of the deviance and all variance inflation factors were less than 3 (@fig-lmloo). Only LST~larv~ was ranked in the top 5 based on marginal improvement of RMSE for LOO of GAMs.
 
+![Best performing GAM using LOO](figures-yellowtail/gamloo.png){#fig-gamloo}
+
+When applying LFO-5 to GAMs the top performing model included HCI~pjuv~, T~part~ and LST~larv~. This model explained 38% of the deviance and all variance inflation factors were less than 3 (@fig-gamlfo5).Both T~part~ and LST~larv~ were ranked in the top 5 variables based on marginal mean RMSE improvement in GAMs using LFO-5. 
+
+![Best performing GAM using LFO-5](figures-yellowtail/gamlfo5.png){#fig-gamlfo5}
+
+When applying LFO-5 to GAMs the top performing model included CUTIsti~pjuv~, and MLD~pjuv~. This model explained 37% of the deviance and all variance inflation factors were less than 3 (@fig-gamlfo10). CUTIsti~pjuv~ was ranked in the top 5 variables baes on marginal improvement of RMSE.
+
+![Best performing GAM using LFO-10](figures-yellowtail/gamlfo10.png){#fig-gamlfo10}
+
+{{< pagebreak >}}
 
 ### Best model using strongest predictors
 
-Using a single best model is not always an ideal approach, as selecting a single best model between large numbers of models often means relatively arbitrary improvements in predictive capacity and/or fit. We also limited the combinations to three covariates to avoid overfitting but more than four covariates could be included with appropriate tests of multicollineatiy. We fit two models, an LM and a GAM, using the best predictors based on the total weight of evidence described above. These variables were: ONI~pre~ which impacted model fit particularly between 1998 - 2008; CutiSTIpjuv which was particularly important in the early time periods and had strong support as a best performing covariate using LOO and LFO-10, LST~larv~ which had particularly strong support using LFO-5, MLD~part~ which had strong support using both LOO and LFO-10.
+Using a single best model is not always an ideal approach, as selecting a single best model between large numbers of models often means relatively arbitrary improvements in predictive capacity and/or fit relative to other highly ranked models. We also limited the combinations to three covariates to avoid overfitting but more than four covariates could be included with appropriate tests of multicollineatiy. We fit two models, an LM and a GAM, using the best predictors based on the total weight of evidence described above. These variables were: ONI~pre~ which impacted model fit particularly between 1998 - 2008; CutiSTIpjuv which was particularly important in the early time periods and had strong support as a best performing covariate using LOO and LFO-10, LST~larv~ which had particularly strong support using LFO-5, MLD~part~ which had strong support using both LOO and LFO-10.
 
 This model construction is a qualitative selection process (support by the quantitative metrics described above) to balance which oceanographic conditions have the most support based on cross validation techniques in addition to the sensitivity of predictor selection to the time period used. An alternative approach could be to use a backwards selection approach with VIFs (which I did test and it provided similar results).
 
+For the best models, I selected:
+1. HCI~larv~ which was an important predictor using time windows in the middle of the time period (@fig-foreward, @fig-backward, @fig-rolling). Other temperature variables could be considered, such as DD~larv~ or PDO~larv~. Alternatively ONI~pre~ could be used which was particularly important to the fit from 2017- 2010 (see alternative best model below). 
+2. CutiSTI~pjuv~ which was the highest ranked oceanographic condition using LFO-10 and LOO for both univariate and multivariate approaches and greatly influenced model fit when the year 1993 - 2000 were included in the time series
+3. MLD~larv~ which was particularly important for model fit when the years 2004 - 2014 were included in the time series (@fig-rolling) and was highly ranked for LOO and LFO-10 (@fig-RMSE5).
+4. HCI~larv~ which was highly ranked for LFO-5, which exclusively supported oceanographic variables describing temperature (@fig-RMSE5). Other temperature variables were exlored and provided similar model performance. 
+
+Before we fit models, lets look at the shape of these relationships.
+
+![Shape of relationship between recruitment deviations and oceanographic conditiosn in the best lm model](figures-yellowtail/partieleffects.png){#fig-relationships}
+
+Fitting a model with the best oceanogrpahic conditions described above using an LM had an R^2^ of 0.53 and VIFs less than 3 and a reasonable distribution of residuals (@fig-lmbest). 
+
+![Best performing LM constructed using a qualitative weight-of-evidence approach](figures-yellowtail/lmbest.png){#fig-lmbest}
+
+To further investigate we can look at the diagnostic plots. These results are not overly concerning, but there are a few years that seem to have disproportionate influence, particularly 1996 (3), 2007 (14) and 2008 (15). These years and their influence on the model may explain some of the temporal variability in best predictors. 
+
+![Diagnostic plots for the best performing LM](figures-yellowtail/lmdiag.png){#fig-lmdiag}
+
+To further understand the performance and sensitivity of this models we can look at its ability to predict the last 5 years of data. The approach for this may vary by species or availability of predictions of environmental data. Here, I omitted the most recent 5 years (2009 - 2014) of recruitment data and provided the most recent 5 years of environmental data. 1-2 years may be more useful for sablefish or hake and may also be a more realistic window of predictions available from MOM6. 
+
+The model performs quite well (@fig-lm5pred) in predicting recruitment and also capturing the overall pattern in the last 5 years of data. 
+
+![Model fit of the best performing LM to recruitment deviations (black) relative to ](figures-yellowtail/lm5pred.png){#fig-lm5pred}
+
+A quick investigation into the best performing model that was selected using LFO-5 shows that the weight-of-evidence approach for generating the model does better that choosing the single best performing model for a single criteria, even when that criteria (LFO-5) is specific to the model preformance you are interested in (here, predicting the last 5 years) (@fig-lmlfo5_5pred).
+
+![Model fit of the best performing model with LFO-5 for an LM to recruitment deviations (black) relative to ](figures-yellowtail/lmlfo5_5pred.png){#fig-lmlfo5_5pred}
+
+We can also look at the shape of these relationships to understand patterns through time and whether they align with our hypotheses. The relationship with HCI~larv~ is quite weak, which is expected given it was not a strongly supported oceanogrpahic condition using the univariate approach. Similarly, we find a strong non-linear relationship with CutiSTI~pjuv~ that aligns with our univariate results. LST~larv~ shows an interesting relationship that reflects a threshold relationship (note: the model still performs quite well with LST is a linear predictor). This relationship mystified me for quite a while, until I realized 2005 and 2009 are the years with highest and lowest upwelling which may explain the conflicting responses of years with average LST~larv~. In years with average LST~larv~, other oceanographic conditions are likely to exert a higher influence on recruitment. The two anomalously above average years of MLD~larv~ are important, notably 1998 was also identified as a potential leverage year, potentially due to the anomalous MLD conditions. Notably, MLD~larv~ still has a positive relationship when these years are omitted from the model. 
+
+{{< pagebreak >}}
+
+Now, lets investigate the GAM model. We expect this model to perform quite similarly to the lm model. This model explained 65% of the deviance and had VIFs less than 3 and a reasonable distribution of residuals (@fig-gambest). 
+
+![Best performing GAM constructed using a qualitative weight-of-evidence approach](figures-yellowtail/gambest.png){#fig-gambest}
+
+We can look at the same diagnostics (@fig-gamdiag1) and see that 2012 and 2009 are also potential leverage years (@fig-gamleverage see orange points).
+
+![Best GAM model diagnostics](figures-yellowtail/gamdiag.png){#fig-gamdiag1}
+
+![Best GAM model leverage diagnostics](figures-yellowtail/gamleverage.png){#fig-gamleverage}
+
+Similar to the linear model, this model does an excellent job predicting the last 5 years of recruitment particularly the trends (@gam5pred) with the exception of 2012 which the model drastically underpredicts. Looking at the partial effects of the oceanographic conditions relative to the relationships, we do see that LST~larv~ does look more like a threshold effect with a more flexible model. NOTE: explorations using MLD~part~ instead of MLD~larv~ does result in a better prediction of 2012 but only explains 53% of the deviance.
+
+![Model fit of the best performing LM to recruitment deviations (black) relative to ](figures-yellowtail/gam5pred.png){#fig-gam5pred}
+
+![Partial effects of each oceanographic condition for the best GAM. Points denote residuals ](figures-yellowtail/gampartial.png){#fig-gampartial}
+
+
+{{< pagebreak >}}
+
+### Non-stationary Models
+
+The last investigation was testing time-varying GAMs where the smoothed effect is able to vary by year such that year is essentially treated as a random effect. In short, mean improvement of RMSE decreased with additional predictors (@fig-marginalNS). I suspect this a bit due to how I performed the comparison, I did the same multivariate approach described above but every oceanographic condition was added into the comparisons as a time-varying response. A more careful consideration of comparing these models to their stationary counterpart may be more valuable (which I did do in a disorganized exploration as well). So, for many combinations, there were multiple time-varying responses in a single model which I suspect is prone to overfitting - however we do not have strong evidence supporting a non-stationary relationship necessary to select which variables should be time-varying and which shouldn't. I also am not sure we have justifiable motivations for fitting time varying relationships, and the evidence for variability through time could be equally justified with non-linear relationships or red noise in short time series. This may be worthwhile to further explore in the multi-species paper, or even on its own, but I do not think it is a priority for the 2025 assessment. 
+
+![Model fit of the best performing GAM to recruitment deviations (black) relative to ](figures-yellowtail/MarginalImprovementNS.png){#fig-marginalNS}
+
+{{< pagebreak >}}
+
 #### Conclusions ####
+
 - we need multiple predictors, single predictors will not fit the TS or predict very well
+
 - oceanographic conditions need to be continuously updated and re-evaluated. Well established relationships can decay through time. Different variables are supported in different time periods. Can we socialize the council to expect these predictors will not always be the same? Importance of temps since MHW years is a great example
-- Exclusively picking a driver based on only the most recent data and/or only predictive capacity makes sense in some ways, but makes it a bit susceptible to changes.
-- The role of temperature seems to be recently important based on LFO-5 results and rolling window analyses.
-- which...all this means that the model may be very different with updated time series
+
+- Exclusively picking a driver based on only the most recent data and/or only predictive capacity makes sense in some ways, but the complete lack of model fit for some of these make it hard to justify. A weight of evidence approach, that both considers variables important to LFO-5 and important to fit, might be a better process than purely dredging models, as illustrated in the positive performance of the best models described above.
+
+- The role of temperature seems to be recently important based on LFO-5 results and rolling window analyses. Swapping out highly correlated temperature indices has a relatively negligible impact on the model performance or predicting the last 5 years of data. When multiple variables are well supported, represent similar things (or temporally autocorrelated condions) the most interpretable or easy to communicate variable is likely the best option. One example, DD~larv~ could easily be swapped for HCI~larv~ for similar performance. 
+
+- which...all this means that the model may be very different with updated time series, and begs a question, how can we socialize to the council and others that we expect environmental indices to change through time, especially on decadal scales?
 
 ![Univariate LM model fits with data from 1993 - 2009 and predicting the last 5 years of data one year at a time. Points denote obesrved recruitment deviations and line denotes model predictions](figures-yellowtail/LMFits.png){#fig-UniLMFit5}
 
@@ -149,8 +240,8 @@ LifeHistoryTab<-read.csv("data-yellowtail/RockfishLifeHistoryTables.csv")
 #pander::pander(LifeHistoryTab, split.cell = 80, split.table = Inf)
 LifeHistoryTab %>% 
   knitr::kable(
-  #  format = "latex",
-       format = "html",
+    format = "latex",
+  #     format = "html",
     booktabs = TRUE,
     longtable = TRUE,
     linesep = "",

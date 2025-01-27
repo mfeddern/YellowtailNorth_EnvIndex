@@ -26,7 +26,7 @@ envir_data = dat %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','year','Y_rec','ZOOpjuv','ZOOben')))%>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv')))%>% 
   mutate_all(~ scale(.)) # drop terms not in model statement
-
+dat<-cbind(dat%>%select(year, Y_rec, sd),envir_data)
 
 summary(gam( BeutiSTIpjuv~ ONIpjuv, data=envir_data))$r.sq
 # Vector of marine covariates for univariate GAM loop

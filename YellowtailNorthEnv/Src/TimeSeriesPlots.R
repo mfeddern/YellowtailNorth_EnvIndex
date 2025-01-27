@@ -11,6 +11,8 @@ library(recdata)
 library(predRecruit)
 library(ggpubr)
 library(car)
+library(forcats)
+
 
 univariate_ns<-data.frame(read.csv("results-yellowtail/univariateNS_Results.csv"))
 univariate_gam<-data.frame(read.csv("results-yellowtail/univariateGAM_Results.csv"))
@@ -131,7 +133,7 @@ marginal2<-rbind(marginal_gam,marginal_lm,marginal_NS)%>%
 
 ggplot(marginal2%>%
   group_by(cv,model)%>%
-  mutate(name = fct_reorder(cov, desc(RMSE_perc)))%>%ungroup(), aes(x=cov, y=RMSE_perc,fill=type)) +
+  mutate(name = fct_reorder(cov, desc(RMSE_perc))%>%ungroup()), aes(x=cov, y=RMSE_perc,fill=type)) +
     geom_bar(stat="identity",  alpha=.6, width=.4) +
   facet_grid(model~cv)+  
   coord_flip() +
@@ -158,6 +160,17 @@ ggplot(marginal3%>%
   theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
 ggsave("figures-yellowtail/MarginalImprovementv2.png", height = 12, width = 10)
 
+ggplot(marginal2%>%filter(model=="NS")%>%
+  group_by(cv,model)%>%
+  mutate(name = fct_reorder(cov, desc(RMSE_perc)))%>%ungroup(), aes(x=cov, y=RMSE_perc,fill=type,group=type)) +
+    geom_bar(stat="identity",  alpha=.6, width=.4) +
+  facet_grid(model~cv)+  
+  coord_flip() +
+    ylab("Percent Change in RMSE") +
+  xlab("Oceanogrpahic Conditions") +
+    theme_bw()+
+  theme(axis.text = element_text(size = 11),plot.title = element_text(hjust = 0.5))
+ggsave("figures-yellowtail/MarginalImprovementNS.png", height = 12, width = 10)
 
 margtop5<-marginal3%>%
   filter(RMSE_perc>0)%>%

@@ -1,0 +1,24 @@
+
+Call:
+lm(formula = Y_rec ~ ONIpre + CutiSTIpjuv + I(CutiSTIpjuv^2) + 
+    HCIlarv + MLDpart, data = dat)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.7049 -0.2236  0.0139  0.2506  0.4316 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)  
+(Intercept)      -0.16726    0.83922  -0.199   0.8447  
+ONIpre           -0.25287    0.13361  -1.893   0.0779 .
+CutiSTIpjuv      -0.27059    0.10560  -2.562   0.0217 *
+I(CutiSTIpjuv^2) -0.25064    0.10540  -2.378   0.0311 *
+HCIlarv          -0.66535    0.36992  -1.799   0.0922 .
+MLDpart           0.04613    0.04947   0.932   0.3659  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.3665 on 15 degrees of freedom
+Multiple R-squared:  0.5293,	Adjusted R-squared:  0.3724 
+F-statistic: 3.374 on 5 and 15 DF,  p-value: 0.03061
+
