@@ -38,23 +38,23 @@ modelName <- "full"
 
 # loading helper functions 
 
-dir<-file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS/Raw Index Scripts")
-setwd(dir)
-list.files()
+#dir<-file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS/Raw Index Scripts")
+#setwd(dir)
+#list.files()
 #source("helper_functions.R")
-source("diagnostics.R")
-source("do_diagnostics.R")
-source("format_hkl_data.R")
-source("format_index.R")
-source("get_index.R")
-source("match.f.R")
-source("plot_betas.R")
-source("plot_index.R")
-source("refactor.R")
+#source("diagnostics.R")
+#source("do_diagnostics.R")
+#source("format_hkl_data.R")
+#source("format_index.R")
+#source("get_index.R")
+#source("match.f.R")
+#source("plot_betas.R")
+#source("plot_index.R")
+#source("refactor.R")
 
 # load data
-dir <- file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS")
-setwd(dir)
+#dir <- file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS")
+#setwd(dir)
 
 #load("data_for_GLM.RData")
 dat<-read.csv("combined_settlement_ocean.csv")
@@ -63,15 +63,15 @@ dat<-read.csv("combined_settlement_ocean.csv")
 #dat<-dat[dat$Common_Name==speciesName,]
 
 # set dir for full model
-dir <- file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS/yellowtail_oregon_SMURF_full")
-setwd(dir)
+#dir <- file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS/yellowtail_oregon_SMURF_full")
+#setwd(dir)
 
 # explore the data 
 
 summary(dat)
 names(dat)
 #dat$CPUE<-dat$Counts/dat$Total_Drift_Effort
-
+dat$year
 ## note using their calculated settlement rate rather calculating my own ##
 
 dat$CPUE<-dat$SFLA_settlement_rate
@@ -120,7 +120,7 @@ with(dat, table(month))
 # fix or add anything 
 dat <- dat %>%
   #rename(Year = year) %>%
-  rename(Effort = Sampling.Interval) %>%
+  dplyr::rename(Effort = Sampling.Interval) %>%
   mutate(logEffort = log(Effort)) %>% 
   #create temp bins for drill
   mutate(temp_bin = cut(temp_c, breaks=c(6,7,8,9,10,11,12)))
@@ -185,16 +185,16 @@ Model_selection
 grid <- expand.grid(
   year = unique(dat$year),
   #Month = levels(dat$Month)[1],
-  region = levels(dat$region)[1]
-  #season = levels(dat$season)[1],
+  region = levels(dat$region)[1],
+  season = levels(dat$season)[1],
   #Site = levels(dat$Site)[1],
-  #treatment = levels(dat$treatment)[1],
-  #temp_bin = levels(dat$temp_bin)[1]
+  treatment = levels(dat$treatment)[1]
+#  temp_bin = levels(dat$temp_bin)[1]
   #rock_bin = levels(dat$rock_bin)[1]
 )
 
 fit.nb <- sdmTMB(
-  SFLA_count ~ year + region,
+  SFLA_count ~  as.factor(year)+region+season+treatment,
   data = dat,
   offset = dat$logEffort,
   time = "year",
@@ -204,7 +204,7 @@ fit.nb <- sdmTMB(
   control = sdmTMBcontrol(newton_loops = 1)) #documentation states sometimes aids convergence?
 
 #}
-
+fit.nb$sdreport
 #Get diagnostics and index for SS
 do_diagnostics(
   dir = file.path(dir), 

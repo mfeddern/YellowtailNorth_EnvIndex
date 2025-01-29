@@ -21,12 +21,13 @@ libraries("lattice", "Rmisc", "ggplot2", "tidyr", "reshape2", "readxl",
 # BRING IN DATA -----------------------------------------------------------
 
 
-setwd("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS")
+#setwd("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS")
 
-ocean<-read.csv("oceanography.csv") # ODFW oceanography data, note updated to corrected data on 1/14
-
+#ocean<-read.csv("oceanography.csv") # ODFW oceanography data, note updated to corrected data on 1/14
+ocean<-read.csv('Oceanography_DailyMean.csv')
 mooring_central<-read.csv("mooring_locations_central.csv") # central moorings 
-settle_central<-read.csv("SFLA_settlement_central.csv") # central settlement
+settle_central<-read.csv("SFLA_settlement_central.csv")
+
 
 mooring_south<-read.csv("mooring_locations_south.csv") # south moorings 
 settle_south<-read.csv("SFLA_settlement_south.csv") # south settlement
@@ -42,8 +43,9 @@ names(settle_central)[names(settle_central) == 'Site.Code'] <- 'Site'
 names(settle_south)[names(settle_south) == 'sfla_settlement_rate'] <- 'SFLA_settlement_rate'
 
 # fix the dates
-settle_central$Date<-as.POSIXct(settle_central$Date, format = "%m/%d/%Y")
+
 settle_south$Date<-as.POSIXct(settle_south$Date, format = "%m/%d/%y")
+settle_central$Date<-as.POSIXct(settle_central$Date, format = "%m/%d/%y")
 
 settle<-rbind(settle_central,settle_south)
 str(settle)
@@ -91,10 +93,12 @@ head(odfw_moorings)
 
 # pull out year for the settlement data
 settle$year<-as.numeric(format(settle$Date,"%Y"))
+year(settle$Date)
 
 summary(settle$year)
 summary(ocean$year) 
-
+unique(settle$year)
+unique(ocean$year)
 ocean<-ocean[ocean$year>2010,] # removed early years that we don't need
 
 settle$Site<-as.factor(settle$Site)
@@ -188,4 +192,5 @@ summary(settle_ocean)
 # EXPORT DATA! WOOHOO! 
 # though I may be back here shortly to see if I can match more oceanographic data...
 
-#write.csv(settle_ocean,"combined_settlement_ocean.csv",row.names = F)
+write.csv(settle_ocean,"combined_settlement_ocean.csv",row.names = F)
+

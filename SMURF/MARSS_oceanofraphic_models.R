@@ -4,6 +4,10 @@ library(forecast)
 library(dplyr)
 library(lubridate)
 library(mgcv)
+library(tidyr)
+library(corrplot)
+library(reshape2)
+
 #### Reading in Data ####
 data <-read.csv('Oceanography_DailyMean.csv')
 head(data)
@@ -19,293 +23,255 @@ yy=data%>%
  # group_by(depth_bin,date,julian,year,marine_reserve)%>%
   #summarise(temp=mean(temp_c))%>%
   ungroup()
+
 yy$date<-as.Date(yy$date)
+
+
 ggplot(yy, aes(x = date, y = temp_c, group=as.factor(depth_bin), col=as.factor(depth_bin)))+
   geom_line()+ 
   facet_wrap(~marine_reserve)
 
-for(i in 1:length(marine_reserve)){
+for(i in 1:4){
 p<-ggplot(yy%>%filter(marine_reserve==marine_reserves[i]), aes(x = julian, y = temp_c, group=as.factor(depth_bin), col=as.factor(depth_bin)))+
     geom_line()+ 
-    ggtitle(marine_reserve[i])+
+    ggtitle(marine_reserves[i])+
     facet_wrap(~year)
 plot(p)
 
 }
-yy<-yy%>%mutate(locationdepth=paste(location, depth_bin))
+ggsave("Figures/CascadeHeadTS.png", height = 8, width = 8)
+ggsave("Figures/RedfishRocksTS.png", height = 8, width = 8)
+ggsave("Figures/OtterRockTS.png", height = 8, width = 8)
+for(i in 1:length(marine_reserves)){
+p<-ggplot(yy%>%filter(marine_reserve==marine_reserves[i]), aes(x = julian, y = oxy_mll, group=as.factor(depth_bin), col=as.factor(depth_bin)))+
+    geom_line()+ 
+    ggtitle(marine_reserves[i])+
+    facet_wrap(~year)
+plot(p)
 
-##### creating a continuouse covariate #####
+}
+yy<-yy%>%filter(marine_reserve=="Otter Rock"|
+                marine_reserve=="Redfish Rocks")
+#### correlation across location ####
+
+
+cor_dat_loc<-yy%>%filter(depth_bin=="mid")%>%
+  select(year,julian,location, temp_c)%>%
+  pivot_wider(names_from=location, values_from=temp_c)
+locations<-unique(yy$location)
+df.subset <- cor_dat_loc[, names(cor_dat_loc)[(names(cor_dat_loc) %in% locations)]]
+corrplotsat<-cor(df.subset, use = "complete.obs")
+corr_loc<-corrplot.mixed(corrplotsat)
+
+cor_dat_loc<-yy%>%filter(depth_bin=="surface")%>%
+  select(year,julian,location, temp_c)%>%
+  pivot_wider(names_from=location, values_from=temp_c)
+locations<-unique(yy$location)
+df.subset <- cor_dat_loc[, names(cor_dat_loc)[(names(cor_dat_loc) %in% locations)]]
+corrplotsat<-cor(df.subset, use = "complete.obs")
+corr_loc<-corrplot.mixed(corrplotsat)
+
+cor_dat_loc<-yy%>%filter(depth_bin=="bottom")%>%
+  select(year,julian,location, temp_c)%>%
+  pivot_wider(names_from=location, values_from=temp_c)
+locations<-unique(yy$location)
+df.subset <- cor_dat_loc[, names(cor_dat_loc)[(names(cor_dat_loc) %in% locations)]]
+corrplotsat<-cor(df.subset, use = "complete.obs")
+corr_loc<-corrplot.mixed(corrplotsat)
+
+cor_dat_depth<-yy%>%filter(location=="Otter Rock")%>%
+  select(year,julian,depth_bin, temp_c)%>%
+  pivot_wider(names_from=depth_bin, values_from=temp_c)
+depth<-unique(yy$depth_bin)
+df.subset <- cor_dat_depth[, names(cor_dat_depth)[(names(cor_dat_depth) %in% depth)]]
+corrplotsat<-cor(df.subset, use = "complete.obs")
+corr_loc<-corrplot.mixed(corrplotsat)
+
+cor_dat_depth<-yy%>%filter(location=="Redfish Rocks")%>%
+  select(year,julian,depth_bin, temp_c)%>%
+  pivot_wider(names_from=depth_bin, values_from=temp_c)
+depth<-unique(yy$depth_bin)
+df.subset <- cor_dat_depth[, names(cor_dat_depth)[(names(cor_dat_depth) %in% depth)]]
+corrplotsat<-cor(df.subset, use = "complete.obs")
+corr_loc<-corrplot.mixed(corrplotsat)
+
+##### Otter Rock MARSS #####
+full_days<-data.frame(date=seq(as.Date("2010/5/1"), as.Date("2024/10/15"), "days"))%>%
+  mutate(julian=yday(date))
+yyy<- yy%>%filter(marine_reserve=="Otter Rock"&julian>100&julian<275)
+merge(yyy%>%select(-julian),full_days)
+
 dates<-seq(as.Date(min(yy$date)), as.Date(max(yy$date)), "days")
 years<-lubridate::year(dates)
 months<-lubridate::month(dates)
 depth_bins<-c('bottom', 'mid','surface')
 covariates_df<-data.frame(date=as.Date(rep(dates,3)),
            depth_bin=rep(depth_bins,each=length(dates)),
-           year=years, months=months, julian=yday(dates)
+           year=as.numeric(years), months=months, julian=yday(dates)
 )
 
-covariates<-covariates_df%>%filter(julian>100&julian<275)
-yyy<-covariates%>%left_join(yy%>%mutate(date=as.Date(date)))
-unique(yy$depth_bin)
-dat <- reshape2::acast(yyy%>%filter(marine_reserve=="Otter Rock"&julian>100&julian<275), depth_bin ~ date, value.var = "temp")
-the.mean <- apply(dat, 1, mean, na.rm = TRUE)
-the.sigma <- sqrt(apply(dat, 1, var, na.rm = TRUE))
-dat <- (dat - the.mean) * (1/the.sigma)
-covariates <- reshape2::acast(yyy%>%filter(marine_reserve=="Otter Rock"&julian>100&julian<275), depth_bin ~ date, value.var = "year")
-#the.mean <- apply(covariates, 1, mean, na.rm = TRUE)
-#the.sigma <- sqrt(apply(covariates, 1, var, na.rm = TRUE))
-#covariates <- (covariates - the.mean) * (1/the.sigma)
+df<-data.frame(yyy)%>%
+  mutate(year2=ifelse(year==2010,1,
+         ifelse(year==2011,2,
+         ifelse(year==2012,3,
+         ifelse(year==2013,4,
+         ifelse(year==2014,5,
+         ifelse(year==2015,6,
+        ifelse(year==2016,7,
+         ifelse(year==2017,8,
+         ifelse(year==2018,9,
+         ifelse(year==2019,10,
+        # ifelse(year==2020,11,
+         ifelse(year==2021,11,
+        ifelse(year==2022,12,
+        ifelse(year==2023,13,
+         ifelse(year==2024,14,0)))))))))))))))%>%
+  select(date, year, year2)
 
-d <-covariates
-B <- "identity"
-Q <- 'equalvarcov'
-#"equalvarcov"
-R <- "diagonal and equal"
-U <- "unequal"
+cov <- reshape2::acast(na.omit(df), year ~ date,fun.aggregate=min, value.var = "year2")
+cov[!is.finite(cov)] <- 0
+ncol(cov)
+
+years<-seq(2011,2024,1)
+C3<-matrix(as.character(years), 3, 14, byrow = TRUE)
+C1<-matrix(as.character(years), 1, 14, byrow = TRUE)
+
+dim(data.frame(C))
+dat <- reshape2::acast(yyy%>%filter(marine_reserve=="Otter Rock"&julian>100&julian<275),fun.aggregate=mean, depth_bin ~ date, value.var = "temp_c")
+#the.mean <- apply(dat, 1, mean, na.rm = TRUE)
+#the.sigma <- sqrt(apply(dat, 1, var, na.rm = TRUE))
+#dat <- (dat - the.mean) * (1/the.sigma)
+
+
+# Each taxon has unique density-dependence
+B <- "equal"
+# Assume independent process errors
+Q <- "diagonal and unequal"
+# We have demeaned the data & are fitting a mean-reverting
+# model by estimating a diagonal B, thus
+U <- "zero"
+# Each obs time series is associated with only one process
+Z <- "identity"
+# The data are demeaned & fluctuate around a mean
 A <- "zero"
-x0 <- "unequal"
-D <- "unconstrained"
-y <- dat  # to show relationship between dat & the equation
-model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, D = D, 
-                   d = d, x0 = x0)
-mod.list<-list(B = matrix(1), U = matrix("u"), Q = matrix("q"), 
-     Z = matrix(1, 3, 1), A = "scaling", R = "diagonal and unequal", 
-     x0 = matrix("mu"), tinitx = 0)
-kem <- MARSS(dat, model = mod.list)
-
-acf(dat, main = "flat level v(t)", na.action = na.pass)
-library(broom)
-library(ggplot2)
-autoplot(kem, plot.type="fitted.ytT")
-autoplot(fit)
-
-
-
-par(mfrow = c(2, 2), mar = c(2, 2, 4, 2))
-resids <- residuals(kem.0)
-acf(resids$.resids, main = "flat level v(t)", na.action = na.pass)
-resids <- residuals(kem.1)
-acf(resids$.resids, main = "linear trend v(t)", na.action = na.pass)
-resids <- residuals(kem.2)
-acf(resids$.resids, main = "stoc level v(t)", na.action = na.pass)
-
-
-
-
-
-d <- augment(fit, interval = "confidence")
-#d$Year <- d$t + 1980
-d$Station <- d$.rownames
-p <- ggplot(data = d) + geom_line(aes(t, exp(.fitted))) + geom_ribbon(aes(x = t, 
-                                                                          ymin = exp(.conf.low), ymax = exp(.conf.up)), linetype = 2, alpha = 0.5)
-#p <- p + geom_point(data = yy, mapping = aes(x = Year, y = SWE))
-p + facet_wrap(~Station) + xlab("") + ylab("SWE (demeaned)")
-
-
-
-Fit.1 <- fit
-Fit.1$states.se
-tot.herring.bio <- colSums(exp(Fit.1$states))
-value<- tot.herring.bio
-herring.tot <- cbind(yr=seq(1973,2012,1),value)
-write.csv(herring.tot, "Data/Compiled/Prey/herring.tot.csv")
-pdf(file="Results/Figures/HerringMarss.pdf", width=12, height=11)
-p + facet_wrap(~Station) + xlab("") + ylab("SWE (demeaned)")
-dev.off()
-
-pdf(file="Results/Figures/HerringRaw.pdf", width=12, height=11)
-p <- ggplot(yy, aes(x = YEAR, y = Biomass)) + geom_line()
-p + facet_wrap(~Group)
-dev.off()
-
-####Harbor Seal####
-
-rm(list = ls()) 
-data <- read.csv("Data/Processed/HarborSeal.csv")
-yy=data
-
-pdf(file="Results/Figures/HarborSealRaw.pdf", width=12, height=11)
-p <- ggplot(yy, aes(x = Year, y = Count)) + geom_line()
-p + facet_wrap(~Group)
-dev.off()
-
-ns <- length(unique(yy$Group))
-B <- "identity"
-Q <- 'equalvarcov'
-#"equalvarcov"
-R <- "diagonal and equal"
-U <- "unequal"
-A <- "zero"
-x0 <- "unequal"
-
-dat <- reshape2::acast(yy, Group ~ Year, value.var = "Count")
-
-
-mod.list = list(B = B, Q = Q, R = R, U = U, x0 = x0, A = A)
-dat.1 <- dat
-dat.1[dat.1==0]<- NA
-
-m <- apply(log(dat.1), 1, mean, na.rm = TRUE)
-fit <- MARSS(log(dat.1), model = mod.list, control = list(maxit = 5000), 
-             inits = list(A = matrix(m, ns, 1)))
-
-
-
-
-library(broom)
-library(ggplot2)
-d <- augment(fit, interval = "confidence")
-#d$Year <- d$t + 1980
-d$Station <- d$.rownames
-
-pdf(file="Results/Figures/HarborSealMARSS.pdf", width=12, height=11)
-p <- ggplot(data = d) + geom_line(aes(t, exp(.fitted))) + geom_ribbon(aes(x = t, 
-                                                                          ymin = exp(.conf.low), ymax = exp(.conf.up)), linetype = 2, alpha = 0.5)
-#p <- p + geom_point(data = yy, mapping = aes(x = Year, y = SWE))
-p + facet_wrap(~Station) + xlab("") + ylab("SWE (demeaned)")
-dev.off()
-
-
-Fit.1 <- fit
-Fit.1$states.se
-tot.harborseal.pop <- colSums(exp(Fit.1$states))
-value<- tot.harborseal.pop
-value <- c(value,rep(value[25], 16))
-seal.tot <- cbind(yr=seq(1975,2015,1),value)
-write.csv(seal.tot, "Data/Compiled/Prey/seal.tot.csv")
-par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(3,5,1,1))
-plot(seal.tot[,1], seal.tot[,2], ylab="Population", xlab="Year", type='l')
-
-
-####Chinook####
-
-data <- read.csv("Data/Compiled/Prey/Salmon/SPS_Download_MAR102020_Chinook2.csv")
-yy <- cbind(Year=data[,1], Count =rowSums(data[,2:28]))
-write.csv(yy, "Data/Compiled/Prey/chinook.total.csv")
-
-data <- read.csv("Data/Compiled/Prey/Salmon/SPS_Download_MAR102020_Chinook3.csv")
-yy=data
-
-dat <- reshape2::acast(yy, Group ~ Year, value.var = "Spawners")
-
-
-mod.list = list(B = B, Q = Q, R = R, U = U, x0 = x0, A = A)
-dat.1 <- dat
-dat.1[dat.1==0]<- NA
-
-m <- apply(log(dat.1), 1, mean, na.rm = TRUE)
-fit <- MARSS(log(dat.1), model = mod.list, control = list(maxit = 5000), 
-             inits = list(A = matrix(m, ns, 1)))
-
-
-
-
-####Chum####
-
-data <- read.csv("Data/Compiled/Prey/Salmon/SPS_Download_MAR102020_Chum.csv")
-yy <- cbind(Year=data[4:46,1], Count =rowSums(data[4:46,2:3]))
-write.csv(yy, "Data/Compiled/Prey/chum.total.csv")
-
-data <- read.csv("Data/Compiled/Prey/Salmon/SPS_Download_MAR102020_Chum2.csv")
-
-pdf(file="Results/Figures/ChumRaw.pdf", width=12, height=11)
-p <- ggplot(data, aes(x = Year, y = Spawners)) + geom_line()
-p + facet_wrap(~Group)
-dev.off()
-
-####Coho####
-
-data <- read.csv("Data/Compiled/Prey/Salmon/SPS_Download_MAR102020_Coho.csv")
-
-
-library(broom)
-library(ggplot2)
-d <- augment(fit, interval = "confidence")
-#d$Year <- d$t + 1980
-d$Station <- d$.rownames
-
-pdf(file="Results/Figures/CohoMARSS.pdf", width=12, height=11)
-p <- ggplot(data = d) + geom_line(aes(t, exp(.fitted))) + geom_ribbon(aes(x = t, 
-                                                                          ymin = exp(.conf.low), ymax = exp(.conf.up)), linetype = 2, alpha = 0.5)
-#p <- p + geom_point(data = yy, mapping = aes(x = Year, y = SWE))
-p + facet_wrap(~Station) + xlab("") + ylab("SWE (demeaned)")
-dev.off()
-
-Fit.1 <- fit
-Fit.1$states.se
-tot.coho.pop <- colSums(exp(Fit.1$states))
-value<- tot.coho.pop
-coho.tot <- cbind(yr=seq(1957,2013,1),value)
-write.csv(coho.tot, "Data/Compiled/Prey/coho.tot.csv")
-par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(3,5,1,1))
-plot(coho.tot[,1], coho.tot[,2], ylab="Population", xlab="Year", type='l')
-
-pdf(file="Results/Figures/CohoRaw.pdf", width=12, height=11)
-p <- ggplot(data, aes(x = Year, y = Spawners)) + geom_line()
-p + facet_wrap(~Group)
-dev.off()
-
-pdf(file="Results/Figures/CohoRaw.pdf", width=12, height=11)
-p <- ggplot(data, aes(x = Year, y = Spawners)) + geom_line()
-p + facet_wrap(~Group)
-dev.off()
-
-
-####Wild Production####
-
-data <- read.csv("Data/Processed/WildProductionChascoWASHINGTONcondensed.csv")
-data<- subset(data, Year>=1973 & Year<=2013)
-yy=data
-
-p <- ggplot(yy, aes(x = Year, y = escapement)) + geom_line()
-p + facet_wrap(~Group)
-
-ns <- length(unique(yy$Group))
-B <- "identity"
-Q <- 'equalvarcov'
-#"equalvarcov"
-R <- "diagonal and equal"
-U <- "unequal"
-A <- "zero"
-x0 <- "unequal"
-
-dat <- reshape2::acast(yy, Group ~ Year, value.var = "escapement")
-
-
-mod.list = list(B = B, Q = Q, R = R, U = U, x0 = x0, A = A)
-dat.1 <- dat
-dat.1[dat.1==0]<- NA
-
-m <- apply(log(dat.1), 1, mean, na.rm = TRUE)
-fit <- MARSS(log(dat.1), model = mod.list, control = list(maxit = 5000), 
-             inits = list(A = matrix(m, ns, 1)))
-
-
-
-
-library(broom)
-library(ggplot2)
-d <- augment(fit, interval = "confidence")
-#d$Year <- d$t + 1980
-d$Station <- d$.rownames
-p <- ggplot(data = d) + geom_line(aes(t, exp(.fitted))) + geom_ribbon(aes(x = t, 
-                                                                          ymin = exp(.conf.low), ymax = exp(.conf.up)), linetype = 2, alpha = 0.5)
-#p <- p + geom_point(data = yy, mapping = aes(x = Year, y = SWE))
-p + facet_wrap(~Station) + xlab("") + ylab("SWE (demeaned)")
-
-
-Fit.1 <- fit
-Fit.1$states.se
-tot.wildproduction <- colSums(exp(Fit.1$states))
-value<- tot.wildproduction
-wildproduction.tot <- cbind(yr=seq(1973,2013,1),value)
-
-write.csv(wildproduction.tot, "Data/Compiled/Prey/wildproduction.tot.csv")
-pdf(file="Results/Figures/WildProductionMarss.pdf", width=12, height=11)
-p + facet_wrap(~Station) + xlab("") + ylab("SWE (demeaned)")
-dev.off()
-
-pdf(file="Results/Figures/WildProduction.pdf", width=12, height=11)
-p <- ggplot(yy, aes(x = Year, y = escapement)) + geom_line()
-p + facet_wrap(~Group)
-dev.off()
+# We assume observation errors are independent, but they
+# have similar variance due to similar collection methods
+R <- "zero"
+# We are not including covariate effects in the obs
+# equation
+D <- "zero"
+d <- "zero"
+
+
+B = "identity" 
+# U = "identity" 
+Q = "equalvarcov"
+Z = "identity" #matrix(1, 3, 1)
+#A = "scaling"
+R = "equalvarcov"
+x0 = "unequal"
+model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R, 
+    C = C3, c = cov, D = D, d = d)
+seas.mod.1 <- MARSS(dat, model = model.list, control = list(maxit = 1500))
+
+coef(seas.mod.1, type = "matrix")$C
+
+states<-seas.mod.1$states
+row.names(states)<-depth_bins
+colnames(states)<-colnames(dat)
+states.t<-data.frame(t(states))
+states.t<-states.t%>%
+  mutate(dates=as.Date(colnames(dat)))%>%
+  pivot_longer(-dates,names_to='depth_bin', values_to = 'temp')%>%
+  mutate(julian=yday(dates),Year=lubridate::year(dates))
+
+p<-ggplot(states.t, aes(x = julian, y = temp, group=as.factor(depth_bin), col=as.factor(depth_bin)))+
+    geom_line()+ 
+    ggtitle("Otter Rock")+
+    facet_wrap(~Year)
+p
+
+ggsave("Figures/OtterRockFit.png", height = 8, width = 8)
+
+
+##### Otter Rock MARSS #####
+
+yyy<- yy%>%filter(marine_reserve=="Redfish Rocks"&julian>100&julian<275)
+merge(yyy%>%select(-julian),full_days)
+
+dates<-seq(as.Date(min(yy$date)), as.Date(max(yy$date)), "days")
+years<-lubridate::year(dates)
+months<-lubridate::month(dates)
+depth_bins<-c('bottom', 'mid','surface')
+covariates_df<-data.frame(date=as.Date(rep(dates,3)),
+           depth_bin=rep(depth_bins,each=length(dates)),
+           year=as.numeric(years), months=months, julian=yday(dates)
+)
+
+df<-data.frame(yyy)%>%
+  mutate(year2=ifelse(year==2010,1,
+         ifelse(year==2011,2,
+         ifelse(year==2012,3,
+         ifelse(year==2013,4,
+         ifelse(year==2014,5,
+         ifelse(year==2015,6,
+        ifelse(year==2016,7,
+         ifelse(year==2017,8,
+         ifelse(year==2018,9,
+         ifelse(year==2019,10,
+        # ifelse(year==2020,11,
+         ifelse(year==2021,11,
+        ifelse(year==2022,12,
+        ifelse(year==2023,13,
+         ifelse(year==2024,14,0)))))))))))))))%>%
+  select(date, year, year2)
+
+cov <- reshape2::acast(na.omit(df), year ~ date,fun.aggregate=min, value.var = "year2")
+cov[!is.finite(cov)] <- 0
+ncol(cov)
+
+years<-c(seq(2010,2019,1),seq(2021,2024,1))
+C3<-matrix(as.character(years), 3, 14, byrow = TRUE)
+C1<-matrix(as.character(years), 1, 14, byrow = TRUE)
+
+dim(data.frame(C))
+dat <- reshape2::acast(yyy%>%filter(marine_reserve=="Redfish Rocks"&julian>100&julian<275),fun.aggregate=mean, depth_bin ~ date, value.var = "temp_c")
+#the.mean <- apply(dat, 1, mean, na.rm = TRUE)
+#the.sigma <- sqrt(apply(dat, 1, var, na.rm = TRUE))
+#dat <- (dat - the.mean) * (1/the.sigma)
+
+
+# We are not including covariate effects in the obs
+# equation
+D <- "zero"
+d <- "zero"
+
+B = "identity" 
+U = "zero"
+Q = "equalvarcov"
+Z = "identity" #matrix(1, 3, 1)
+A = "scaling"
+R = "equalvarcov"
+x0 = "unequal"
+model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R, 
+    C = C3, c = cov, D = D, d = d)
+seas.mod.1 <- MARSS(dat, model = model.list, control = list(maxit = 1500))
+
+coef(seas.mod.1, type = "matrix")$C
+
+states<-seas.mod.1$states
+row.names(states)<-depth_bins
+colnames(states)<-colnames(dat)
+states.t<-data.frame(t(states))
+states.t<-states.t%>%
+  mutate(dates=as.Date(colnames(dat)))%>%
+  pivot_longer(-dates,names_to='depth_bin', values_to = 'temp')%>%
+  mutate(julian=yday(dates),Year=lubridate::year(dates))
+
+p<-ggplot(states.t, aes(x = julian, y = temp, group=as.factor(depth_bin), col=as.factor(depth_bin)))+
+    geom_line()+ 
+    ggtitle("Redfish Rocks")+
+    facet_wrap(~Year)
+p
+
+ggsave("Figures/RedfishRocksFit.png", height = 12, width = 12)
