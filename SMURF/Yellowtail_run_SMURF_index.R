@@ -186,23 +186,35 @@ grid <- expand.grid(
   year = unique(dat$year),
   #Month = levels(dat$Month)[1],
   region = levels(dat$region)[1],
-  season = levels(dat$season)[1],
+  season = levels(dat$season)[1],# might be redundant with temp, year might be as well, small number of sites then year will be confounded with temp
   #Site = levels(dat$Site)[1],
-  treatment = levels(dat$treatment)[1]
-#  temp_bin = levels(dat$temp_bin)[1]
+  treatment = levels(dat$treatment)[1],
+  #temp_c = mean(dat$temp_c) 
+  #temp_bin = levels(dat$temp_bin)[1] #could be continuous, could be a smooth
   #rock_bin = levels(dat$rock_bin)[1]
 )
 
+#bind col mean temp_c for the grid variable = add in mean temp by year to grid so there is a reference point for year
+dat%>%
+  filter(year!=2013&SFLA_settlement_rate>0)%>%
+  group_by(year, region, treatment)%>%
+  summarise(obs=n())
+
+dat2<-dat%>%filter(year!=2013)
+summary(dat$logEffort)
+
+ggplot(dat, aes(y=SFLA_count))+
+  geom_histogram()
+  
 fit.nb <- sdmTMB(
-  SFLA_count ~  as.factor(year)+region+season+treatment,
-  data = dat,
-  offset = dat$logEffort,
+  SFLA_count ~  year+region+treatment,#still fussy with region
+  data = dat2,
+  offset = dat2$logEffort, 
   time = "year",
   spatial="off",
   spatiotemporal = "off",
-  family = nbinom2(link = "log"),
-  control = sdmTMBcontrol(newton_loops = 1)) #documentation states sometimes aids convergence?
-
+  family = poisson(link = "log"), #twedie distribution new var cpue = cout/effort this would give us settlement rate and then we could do the twedie wtihout an offset
+  control = sdmTMBcontrol(newton_loops = 3)) #documentation states sometimes aids convergence?
 #}
 fit.nb$sdreport
 #Get diagnostics and index for SS
