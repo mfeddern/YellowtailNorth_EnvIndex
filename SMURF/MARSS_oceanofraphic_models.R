@@ -154,21 +154,14 @@ U <- "zero"
 Z <- "identity"
 # The data are demeaned & fluctuate around a mean
 A <- "zero"
-# We assume observation errors are independent, but they
-# have similar variance due to similar collection methods
-R <- "zero"
-# We are not including covariate effects in the obs
 # equation
 D <- "zero"
 d <- "zero"
-
-
 B = "identity" 
 # U = "identity" 
 Q = "equalvarcov"
 Z = "identity" #matrix(1, 3, 1)
-#A = "scaling"
-R = "equalvarcov"
+R = "zero"
 x0 = "unequal"
 model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R, 
     C = C3, c = cov, D = D, d = d)

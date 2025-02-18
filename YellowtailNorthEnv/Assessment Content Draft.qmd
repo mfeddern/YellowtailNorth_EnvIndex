@@ -1,0 +1,15 @@
+---
+title: "Assessment Content Draft"
+format: pdf
+editor: visual
+---
+
+## Environmental Data
+
+Over the past several years, progress has been made in understanding how oceanographic and ecosystem conditions impact density-independent survival of groundfish species during early life stages (Haltuch et al. 2020, hake, sablefish). These efforts have supported generation of oceanographic indices of recruitment that have been evaluated in stock assessment (Taylor et al. 2023). We have evaluated the use of ocean modeling data from GLORYs as a predictor of northern Yellowtail recruitment deviations following the methods established by CITE and applied by CITE CITE. 
+
+The topic of model-selection, robustness and validation for the  recruitment environment relationship has been a recurrent theme in STAR panels and with the SSC since its use of environmental indices began with the sablefish stock assessment in 2002.
+
+One aspect of model validation that is difficult to quantify is the a priori vs. post-hoc nature of the final selected covariate(s). The concern here was that if a large number of covariates are evaluated, then a small number of seemingly large, but entirely random, correlations would be expected. To explore this issue, it is necessary to determine exactly how many potential covariates were evaluated during the original variable selection process, ultimately leading to the covariate included in recent stock assessment.
+
+From publications, stock assessments, and other documents, a number of covariates at several temporal and regional aggregations appear to have been tested, resulting in a total of almost 900 unique possible combinations. However, not all of these series are independent, in fact, SSH appears to have been selected, in part, as a replacement for the copepod index on the basis of the correlation between the two and the more complete time series of the former. 

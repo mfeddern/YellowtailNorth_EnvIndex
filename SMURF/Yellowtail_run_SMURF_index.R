@@ -38,15 +38,15 @@ modelName <- "full"
 
 # loading helper functions 
 
-#dir<-file.path("C:/Users/daubleal/OneDrive - Oregon/Desktop/2025 Assesssment Cycle/Index_SMURFS/Raw Index Scripts")
+dir<-here()
 #setwd(dir)
 #list.files()
 #source("helper_functions.R")
 #source("diagnostics.R")
-#source("do_diagnostics.R")
+source("do_diagnostics.R")
 #source("format_hkl_data.R")
 #source("format_index.R")
-#source("get_index.R")
+source("get_index.R")
 #source("match.f.R")
 #source("plot_betas.R")
 #source("plot_index.R")
@@ -72,6 +72,12 @@ summary(dat)
 names(dat)
 #dat$CPUE<-dat$Counts/dat$Total_Drift_Effort
 dat$year
+dist_season<-dat%>%
+  group_by(season,year, region)%>%
+  summarise(n=n())
+dat%>%
+  summarise(average=mean(julian), max=max(julian), min=min(julian), sd=sd(julian))
+dat<-dat%>%filter(julian>106&julian<286)
 ## note using their calculated settlement rate rather calculating my own ##
 
 dat$CPUE<-dat$SFLA_settlement_rate
@@ -163,7 +169,7 @@ dat <- dat %>%
 # model selection 
 
 model.full <- MASS::glm.nb(
-  SFLA_count ~ year + region + treatment + season + offset(logEffort),
+  SFLA_settlement_rate ~ as.factor(year) + region + treatment,
   data = dat,
   na.action = "na.fail") # I'm getting errors using "na.fail" here (I also tried changing it but then it wouldn't work in the dredge function below) 
 summary(model.full)
@@ -215,6 +221,8 @@ fit.nb <- sdmTMB(
   spatiotemporal = "off",
   family = poisson(link = "log"), #twedie distribution new var cpue = cout/effort this would give us settlement rate and then we could do the twedie wtihout an offset
   control = sdmTMBcontrol(newton_loops = 3)) #documentation states sometimes aids convergence?
+
+
 #}
 fit.nb$sdreport
 #Get diagnostics and index for SS
