@@ -91,7 +91,7 @@ head(odfw_moorings)
 # ** sent email to Ryan about this on 1/9/25 - using corrected version now (1/14)
 
 # pull out year for the settlement data
-settle$year<-as.numeric(format(settle$Date,"%Y"))
+settle$year<-as.numeric(format(settle$Date,"%Y")) #get year from date
 year(settle$Date)
 
 summary(settle$year)
@@ -367,7 +367,7 @@ summary(settle_ocean)
 # EXPORT DATA! WOOHOO! 
 # though I may be back here shortly to see if I can match more oceanographic data...
 
-write.csv(settle_ocean,"combined_settlement_ocean.csv",row.names = F)
+write.csv(settle_ocean,"combined_settlement_oceanV2.csv",row.names = F)
 
 
 ##### Plots of oceanographic data ######
@@ -375,6 +375,15 @@ write.csv(settle_ocean,"combined_settlement_ocean.csv",row.names = F)
 for(i in 1:2){
   p<-ggplot(ocean_full%>%filter(marine_reserve==marine_reserves[i]), 
             aes(x = julian, y = temp_index))+
+    geom_line()+ 
+    ggtitle(marine_reserves[i])+
+    facet_wrap(~year)
+  plot(p)
+}
+
+for(i in 1:2){
+  p<-ggplot(ocean_full%>%filter(marine_reserve==marine_reserves[i]), 
+            aes(x = julian, y = temp_c_mid))+
     geom_line()+ 
     ggtitle(marine_reserves[i])+
     facet_wrap(~year)
