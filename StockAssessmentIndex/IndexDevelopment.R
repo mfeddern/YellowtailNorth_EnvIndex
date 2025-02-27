@@ -139,9 +139,7 @@ for (i in seq_along(combinations)) {
 
 
 results_arr_RMSE_LOO <- arrange(results_gam_loo,RMSE)
-results_arr_devex_LOO  <- arrange(results_gam_loo,desc(dev.ex))
-results_arr_AIC_LOO  <- arrange(results_gam_loo,AIC)
-results_arr_rsq_LOO  <- arrange(results_gam_loo,desc(rsq))
+
 
 # View the results data frame
 print(results_arr_RMSE)
