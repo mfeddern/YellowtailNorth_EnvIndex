@@ -15,16 +15,16 @@ library(tidyverse)
 library(corrplot)
 library(car)
 
-df = data.frame(read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail2025.csv"))
+df = data.frame(read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail2025_unexpanded.csv"))
 dfa = data.frame(read.csv("data-yellowtail/dfa_trend.csv"))
-data_years = 1994:2018
+data_years = 1994:2019
 dat = df %>% 
   dplyr::select(!any_of( c('ZOOpjuv', 'ZOOben')))  %>% 
   filter(year %in% data_years)%>%
   left_join(dfa)
 envir_data = dat %>%  # drop terms not in model statement
   dplyr::select(!any_of(c('sd','year','Y_rec','ZOOpjuv','ZOOben',"dfa")))%>%  # drop terms not in model statement
-  dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv',"X","dfa")))%>% 
+  dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv',"X","dfa","Type")))%>% 
   mutate_all(~ scale(.)) # drop terms not in model statement
 dat<-cbind(dat%>%select(year, Y_rec, sd),envir_data)
 
@@ -138,13 +138,14 @@ for (i in seq_along(combinations)) {
 }
 
 
-results_arr_RMSE_LOO <- arrange(results_gam_loo,RMSE)
-
+results_arr_RMSE_LOO <- arrange(results,RMSE)
+results_arr_LOO_rmse <- arrange(results,RMSE)
+results_arr_LOO_AIC <- arrange(results,AIC)
 
 # View the results data frame
-print(results_arr_RMSE)
+print(results_arr_RMSE_LOO)
 print(results_arr_devex)
-print(results_arr_AIC)
+print(results_arr_LOO_AIC)
 print(results_arr_rsq)
 # Fit a model that includes multiple variables from the top model
 combosLOO = c(results_arr_RMSE_LOO$var1[1], results_arr_RMSE_LOO$var2[1], results_arr_RMSE_LOO$var3[1])
