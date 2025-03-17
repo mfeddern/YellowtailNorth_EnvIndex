@@ -1,0 +1,192 @@
+---
+title: "Ecosystem and Environmental Conditions: northern Yellowtail Rockfish"
+format: 
+  pdf:
+    toc: false
+    fig-pos: H
+    fig-align: center
+    geometry:
+      - top=1in
+      - bottom=1in
+      - left=1in
+      - right=1in
+      - heightrounded
+crossref: 
+  ref-hyperlink: false
+editor: visual
+bibliography: references.bib
+csl: "oecologia.csl"
+execute: 
+  echo: false
+  warning: false  
+  messages: false    
+---
+
+```{r}
+
+main_dir = getwd()
+fig_dir = paste0(main_dir,"/figures/")
+
+library(tidyverse)
+
+```
+
+Here we discusses ecosystem information relevant to Yellowtail Rockfish *Sebastes flavidus* ecology including: environmental influences on recruitment, distribution and habitat, trophic considerations, and climate vulnerability.
+
+Overall we consider ecosystem and environmental conditions to be X(Level Y) for sablefish, with XX to XX confidence ...
+
+## Environmental influences on demographic rates {#sec-envir}
+
+### Recruitment {#sec-recruitment}
+
+The sablefish stock-recruitment curve relationship is weak suggesting that environmental drivers are important for determining annual reproductive success and recruitment [@tolimieri2018oceanographic]. Environmental drivers of recruitment for sablefish have received substantial attention with a focus on sea surface height (SSH) [@schirripa2006interannual; @schirripa2009testing; @tolimieri2023sea], although some studies have focused more closely on hypothesis-driven selection of oceanic drivers [@tolimieri2018oceanographic]. SSH along the northern portion of the West Coast is included as an environmental index of recruitment in the stock assessment model [@tolimieri2023sea; @johnson2023], and as such, the SSH index is not included here. Modeling work using output from a Regional Ocean Modeling System (ROMS) suggests that strong recruitment is associated with (i) colder conditions during the spawner preconditioning period, (ii) warmer water temperatures during the egg stage, (iii) stronger cross-shelf transport to near-shore nursery habitats during the egg stage, (iv) stronger long-shore transport to the north during the yolk-sac stage, and (v) cold surface water temperatures during the larval stage [@tolimieri2018oceanographic].
+
+Young-of-year (YOY) or age-0 sablefish are well-sampled by the WCGBTS allowing for the direct estimation of juvenile abundance ([Fig. @fig-juv-abnd])[@tolimieri2020spatio; @leising2025cciea]. Juvenile abundance (defined here fish $\le$ 29 cm TL based on age-at-length relationships, see @tolimieri2020spatio for details) was historically high in 2021 and decreased but remained high through 2024. In most years, the index is a good measure of age-0 abundance and recruitment. However, size structure data ([Fig. @fig-juv-size]) suggest that the juveniles in 2022 were mostly slow-growing age-1 (in the 27-30 cm size range) fish from the previous year, and that 2024 contained a mix of age-0 and smaller age-1 fishes. In most years, there is a mode of smaller fish around 25 cm TL. However, in 2022 there were very few small fish but a small mode at about 28 cm. Similarly in 2024, while there were smaller fish, there were also a large number of fish in the 27-30 cm range. So actual recruitment of age-0 fishes is lower in those years than indicated by the juvenile abundance index. These data suggest strong recruitment in 2021 and 2023, and moderate recruitment in 2024. These patterns also suggest that more consistent recruitment may lead to enhanced density-dependence and slower growth your age-0 fishes.
+
+![Index of juvenile abundance for sablefish on the West Coast. The index uses length-at-age and weight-at-length information to expand length catch data from the WCGBTS to estimate biomass of fishes by trawl. These data were then used in a delta-lognormal model fitted in sdmTMB with both spatial and spatiotemporal autocorrelation, scaled depth as a quadratic variable. See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail. Annual biomass estimates are then scaled to 0-1.](figures/GF-juvenile-abundance-sablefish-1.png){#fig-juv-abnd fig-align="center"}
+
+![Size distributions of sablefish less than or equal to 35 cm for recent years.](figures/GF-sablefish-juvenile-size-1.png){#fig-juv-size fig-align="center"}
+
+### GLORYS oceanic predictors of recruitment
+
+We investigated alternative oceanographic model products produced by Copernicus Marine Environment Monitoring Service (CMEMS) (<https://marine.copernicus.eu/>) and Mercator Ocean International (MOI) (<https://www.mercator-ocean.eu/>) to test if this modelling framework could be used to produce an environmental index of sablefish recruitment.
+
+We combined two CMEMS products: the Global Ocean Reanalysis and Simulation (GLORYS12V1: GLOBAL_MULTIYEAR_PHY_001_030, <https://doi.org/10.48670/moi-000211>) [@Fernandex2018glorys; @Drevillon2022glorys] and the Copernicus Marine global analysis and forecast (CMGAF, GLOBAL_ANALYSISFORECAST_PHY_001_024; <https://doi.org/10.48670/moi-00016>) [@LeGalloudec2022forecast]. The data are served by the Copernicus Marine Service (<https://marine.copernicus.eu/>). When downloaded the data covered: GLORYS: 1993-01-01 to 2020-10-31 and CMGAF: 2020-11-01 to 2023-06-01. Note both the reanalysis and the analysis and forecast walk forward in time. For the CMGAF, time series are updated at regular intervals beginning with a daily forecast and hindcast simulation, and a weekly 'hindcast-best analysis' with data assimilation through -15 days [@LeGalloudec2022forecast]. We use "GLORYS" below to refer to the combined data set.
+
+Overall the GLORYS analysis followed @tolimieri2018oceanographic and @haltuch2020oceanographic. More specifically, data for water column temperature, bottom temperature, and mixed-layer depth were downloaded as daily values for 40-48 °N and processed as follows for each life-history-stage predictor:
+
+1.  Subsetted data by bottom depth, mixed-layer depth, and distance from shore as relevant ([@tolimieri2018oceanographic]).
+
+2.  Calculated the daily average
+
+3.  Subsetted #2 by the relevant time periods [@tolimieri2018oceanographic]
+
+4.  Calculated the annual average (or sum for degree days) for 1993-2022 for that potential predictor
+
+For transport variables, monthly means from the GLORYS models were used to reduce processing time but followed the same overall model selection process as as above. Overall, the combined GLORYS time series did not show obvious break points from 2020 to 2021 ([Fig. @fig-glorys-ts]).
+
+![Transport and temperatures times series from the GLORYS models. DD = degree days, T = temperature, MLD = mixed-layer depth, LST = longshore transport, CST = cross-shelf transport, pre = female precondition period prior to spawning, egg = egg stage, larv = larval stage, pjuv = pelagic juveniles, bjuv = benthic juveniles.](figures/glorys_time_series.png){#fig-glorys-ts}
+
+GLORYS predictors were pre-screened for correlations among variables and non-linear relationships with sablefish recruitment deviations. Correlated predictors (r $\ge$ 0.75, [Fig. @fig-glorys-corr]) were excluded from the same model.
+
+![Correlations between GLORYS time series. DD = degree days, T = temperature, MLD = mixed-layer depth, LST = longshore transport, CST = cross-shelf transport, pre = female precondition period prior to spawning, egg = egg stage, larv = larval stage, pjuv = pelagic juveniles, bjuv = benthic juveniles.](figures/glorys-correlations-among-variables.png){#fig-glorys-corr}
+
+Non-linearity for individual terms was evaluated by comparing the linear model to a model including both the linear and quadratic forms of the predictor. If the AICc of the quadratic form was lower, we included the quadratic form as a potential predictor as well, but required that the linear term appear in models that included the quadratic from.
+
+We fit all combinations of the GLORYS drivers, excluding correlated variables from the same model, and limiting the total number of predictors in any model to four. Model selection was carried out using the 'dredge' function in the MuMIn package in R [@R-base; @MuMIn-cite]. Candidate models were evaluated based on their $\Delta$AICc and number of predictors.
+
+#### Results
+
+Three models had $\Delta$AICc values $\le$ 2.0 (@tbl-aic). The best-fit model included degree days during the egg stage (DDegg), cross-shelf transport during the yolksack (CSTyolk), pelagic juvenile (CSTpjuv), and benthic juvenile (CSTbjuv) stages and explained 61% of the variation in recruitment deviations from 1993-2023 (@tbl-aic, [Fig. @fig-glorys-fit]).
+
+```{r tbl-aic}
+#| tbl-cap: Results of model fitting
+
+cap_text = "Results of model fitting showing estimated coefficients for models with delta AIC </= 2.0. CST = cross-shelf transport, DD = degree days, T = temperature, yolk = yolksack stage, pjuv = pelagic juvenile, and bjuv = benthic juvenile stage."
+
+df = data.frame(read.csv(paste0(fig_dir,"Table_dredge-aic-delta4.csv"), header = T))
+df = df %>% filter(delta<=2)
+df = df[,c('X.Intercept.','Tpre','Tspawn','DDegg','CSTyolk','CSTpjuv','CSTbjuv','R2','delta')]
+df = df %>% rename(Intercept = X.Intercept.)
+df = round(df,3)
+
+knitr::kable(df)
+
+
+
+```
+
+The model tracked the data well (r^2^ = 0.61) with most recruitment deviations falling with $\pm$ 1.0 s.e. of the recruitment index ([Fig. @fig-glorys-fit]). The model did a good job at picking up the increase in recruitment from 2018 on as well as the drop in 2022.
+
+![Model fit to the data and model testing results. Black line is the model prediction $\pm$ 1.0 s.e (dotted lines). While points are the ln recruitment deviations from the stock assessment model. Yellow points are from jackknife analysis leaving out one year and refitting the model, and red points fit the best-fit model to 1993-2017 then predict 2018-2023.](figures/glorys-fit.png){#fig-glorys-fit}
+
+Sablefish recruitment was positively correlated with CSTbjuv and CSTyolk (eastward, onshore transport, [Fig. @fig-glorys-terms]). which is generally consistent with onshore transport during the egg stage for the ROMS results [@tolimieri2018oceanographic]. However, the negative correlation with temperature during the egg stage (DDegg) differs from the earlier ROMS work. Offshore transport during the pelagic juvenile stage (CSTpjuv) may represent either transport to settlement habitat or the indirect impact of upwelling (and subsequent offshore transport) on productivity.
+
+![Partial residual plots of GLORYS predictors. CST = cross-shelf transport, DD = degree days, T = temperature, yolk = yolksack stage, pjuv = pelagic juvenile, and bjuv = benthic juvenile stage.](figures/glorys-terms.png){#fig-glorys-terms}
+
+#### Model testing
+
+Model diagnostics and testing followed @tolimieri2018oceanographic and @haltuch2020oceanographic, but only a subset of test results is shown here. Model testing was carried out to determine how stable the best-fit model was to both individual years and the precision of the estimates of recruitment deviations. Tests included:
+
+1\. Jackknife analysis on the best-fit model was used to determine the impact of individual years on the model fit.
+
+2\. Refit the best-fit model using data for 1993-2017 and then predict 2018-2022.
+
+3\. Refit the best-fit model for 1993-2017 and predict 2018. Repeat stepping forward one year at a time.
+
+4\. Individual years were jackknifed and then the entire model selection process was rerun to determine the impact of individual years on the selection of the predictors in the best-fit model.
+
+Residual plots showed reasonable residuals for the best-fit model ([Fig. @fig-resids]), although there was some minor deviation from the 1:1 line.
+
+![Diagnostics plots from the best-fit model.](figures/F_S1.diagnostic.plots.png){#fig-resids height="50%"}
+
+Jackknife testing (excluding an individual year and refitting the best-fit model) showed stable results with little change in the r^2^ value ([Figs. @fig-glorys-fit] & [-@fig-jack]). Fitting the best-fit model to 1993-2017 and predicting 2018-2022 produced similar results to the best-fit model [Figs. @fig-glorys-fit], as did predicting ahead one year at a time from 2017 on.
+
+![Results of jackknife analysis indicating changes in the r^2^ when individual years were excluded from the best-fit model.](figures/glorys-jackknife.png){#fig-jack height="50%" fig-align="center"}
+
+Jackknifing individual years and re-running the entire model selection produced stable model selection. CSTyolk, CSTpjuv, and CSTbjuv were included in all 30 models (one for each year), while DDegg was included in 28 models and replaced by Tspawn in 1996 and 2008.
+
+```{r tbl-jack-refit}
+#| include: false
+
+df_jack = data.frame(read.csv(paste0(fig_dir,"R_jackknife-dredge-refit.csv")))
+df_jack[is.na(df_jack)] <- 0 
+cs = colSums(df_jack) 
+df_jack = df_jack[,cs!=0]
+df_jack[df_jack == 0] <- NA
+df_jack[!is.na(df_jack)] <- 1
+cs = colSums(df_jack, na.rm = T)
+
+```
+
+### Growth {#sec-growth}
+
+Along the West Coast, asymptotic size ( L$_\infty$, cm) is higher at higher latitudes and decreases with depth, and growth rates (*k*, year^-1^) are higher north of Pt Conception than to the south and at depth $\le$ 550 m[@head2014maturity]. In Alaska, there is evidence that large recruitment events can result in density-dependent decreases in growth [@cheng2024slim]. West Coast population may have experienced similar impacts of density-dependent growth following high recruitment in 2021 and 2023 ([Figs. @fig-juv-abnd] & [-@fig-juv-size]), as noted above (see @sec-recruitment). Work in Alaska suggests that attaining large size prior to overwintering may be important and that the first winter may represent a survival bottleneck [@callahan2021first]. Optimum growth in lab experiments was 12-16 $^\circ$C and declined out of this range; warmer ocean conditions may improve overwinter survival if sufficient food resources are available [@krieger2020growth]. Bottom temperature from the WCGBTS shows distinct depth (offshore) and latitude gradients in temperature ([Fig. @fig-bottom-temp]) but not obvious temporal trends although there is some variability from year to year.
+
+![Bottom temperature by year from the WCGBTS.](figures/bottom-rawtemp-map.png){#fig-bottom-temp}
+
+### Maturity {#sec-maturity}
+
+The age and length at which fishes mature is important for estimating female spawning biomass, and the sablefish assessment model is sensitive to maturity schedules [@stewart2011status]. On the West Coast, coastwidet the age of 50% maturity (A~50~) is 6.89 and length 50% maturity (L~50~) is 54.64 cm. However, L~50~ is lower and A~50~ are both lower in the north of Cape Mendocino (\~40 $^{\circ}$N)[@head2014maturity]. This variation appears related regions with colder water and higher productivity due to upwelling [@head2014maturity]. There is some evidence that A~50~ can vary temporally. In Alaska, A~50~ increased from 5.5 years in the 1998-2010 period to 6.8 years in the 2010-2019 period [@rodgveller2024trends]; the reasons for this shift are unclear.
+
+Sablefish spawn from January through March along the West Coast but with peak spawning in January with most active females at 800 m or deeper, although some may spawn as shallow as 300 m [@Fujiwara1988sex; @macewicz1994fecundity; @moser1994early]. Females may produce 3-4 batches per year [@hunter1989fecundity; @macewicz1994fecundity; @kimura1998tagged].
+
+## Distribution and habitat considerations {#sec-dist_hab}
+
+### Juvenile abundance {#sec-juv-abnd}
+
+The distribution of juvenile sablefish maybe sensitive to a changes in the environment and indicative of upcoming changes in adult distribution and impacts of the fishery. The distribution of sablefish juveniles ($\le$ 29 cm TL) has fluctuated over time ([Fig. @fig-juv-dist]). Prior to 2014, juveniles were more frequent ([Fig. @fig-juv-dist]a) and more abundant ([Fig. @fig-juv-dist]b) south of Cape Mendocino. However, from 2014-2019 (during the strong marine heatwave years) juveniles were more abundant in the north. The strong 2021 year-class was associated with high abundances across the entire coast and abundance has generally stayed distributed coastwide, although probability of occurrence tended to be higher in the north.
+
+![Distribution of sablefish along the West Coast: (a) probability of occurrence, (b) abundance index, scaled to 0-1. Length-at-age and weight-at-length information were used to expand length catch data from the WCGBTS to estimate biomass of fishes \</= 29 cm by trawl. These data were then used in a delta-lognormal model fitted in sdmTMB with both spatial and spatiotemporal autocorrelation, scaled depth as a quadratic variable. See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail.](figures/dist_map-sablefish-combined.png){#fig-juv-dist fig.align="center"}
+
+### Adult Distribution {#sec-adult-dist}
+
+The center of gravity of sablefish biomass has shifted north by approximately 2 $^{\circ}$N since 2013 to 41.5 $^{\circ}$N in 2024 but only by approximately 1 $^{\circ}$N since this start of the trawl survey in 2003. The shift north coincides with stronger recruitment (juvenile abundance) north of Cape Mendocino concurrently the the large marine heatwave of the 2014-2016 period.
+
+![Center of gravity of sablefish biomass. CoG was estimated from a delta-lognormal model with spatial and spatiotemporal autoregression including scaled depth as a smoothed parameter (3 knots). See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail. Data from the WCGBTS.](figures/COG-sablefish.png){#fig-cog fig.align="center"}
+
+Maps of adult distribution shows a clear shift from shallower juvenile habitat ([Fig. @fig-juv-dist]) to deeper waters for adults ([Fig. @fig-adult-dist]), consistent with known life-history. For much of the period, sablefish biomass was centered around Cape Mendocino at approximately 40 $^{\circ}$N, but there was a clear increase in biomass along the OR and WA coasts from 2021+, consistent with higher recruitment in this area ([Fig. @fig-juv-dist]) during and following the MHW years of 2014-2016.See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail. See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail.
+
+![Distribution of adult sablefish along the West Coast. Sablefish biomass was estimated from a delta-lognormal model with spatial and spatiotemporal autoregression including scaled depth as a smoothed parameter (3 knots). See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail. Data from the WCGBTS.](figures/dist_map-adult-sablefish-index.png){#fig-adult-dist fig.align="center"}
+
+### Availability to ports {#sec-ports}
+
+Stronger recruitment in the north has lead to an increase in available biomass for fishers operating out of Astoria ([Fig. @fig-port-avail]), but overall increases in sablefish biomass has lead to general increases in available biomass.
+
+![Index of the availability of sablefish biomass to ports along the West Coast. Ports are Bellingham Bay (BLL), Astoria (AST), Charleston (Coos Bay, COS), Brookings (BRK), Crescent City (CRS), Eureka (ERK), Fort Bragg (BRG) and Morro Bay (MRO). Availability was calculate based on a combination of locally available biomass and distance from port for the 75th quantile of fishing trips in 2015 using results of the species distribution model above. See https://cciea-esr.github.io/ESR-Technical-Documentation-FY2025/ for more detail.](figures/sablefish-adults-avail-to-ports.png){#fig-port-avail fig.align="center"}
+
+## Trophic considerations {#sec-trophic}
+
+## Non-fisheries human activities {#sec-non-fish}
+
+## Climate Vulnerability Assessment rank {#sec-cva}
+
+@mcclure2023vulnerability list sablefish as having **moderate** climate vulnerability with **high** climate exposure due to impacts from changes in *sea surface temperature*, *ocean acidification*, and *subsurface oxygen* ([Fig. @fig-cva]). The biological sensitivity of sablefish is **moderate** with risk from high scores for *population growth rate*, *early life-history and survival*, and complexity *in reproductive strategy*. These life-history risks are tempered by low scores for *habitat specificity*, *adult mortality*, and *dispersal of early life stages*.
+
+**Delete figure as unnecessary?**
+
+![Climate vulnerability analysis for sablefish](figures/sablefish-cva.png){#fig-cva fig-align="center" width="50%"}
+
+## Other considerations
+
+## References

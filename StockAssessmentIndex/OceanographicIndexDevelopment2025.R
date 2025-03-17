@@ -15,27 +15,43 @@ library(tidyverse)
 library(corrplot)
 library(car)
 library(gratia)
+library(ggpubr)
 
 ##### Reading in the data #####
-
-df = data.frame(read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail2025_unexpanded.csv"))
-dfa = data.frame(read.csv("data-yellowtail/dfa_trend.csv"))
+df <- data.frame(read.csv("data-yellowtail/2024Env-annual-yellowtail-standardized.csv"))
+colnames(df)
+envir_data = df %>% 
+  rename(ONIlarv=oni_larv,ONIpjuv=oni_pjuv,ONIpre=oni_pre,
+         PDOlarv=pdo_larv,PDOpjuv=pdo_pjuv,
+         LUSI=lusi_annual,
+         BeutiTUMI=BeutiTUMIpjuv, BeutiSTI=BeutiSTIpjuv,
+         CutiSTI=CutiSTIpjuv,CutiTUMI=CutiTUMIpjuv, 
+         BakunSTI=bakun_sti,
+         HCIlarv=hci1_larv,HCIpjuv=hci1_pjuv,
+         HCI2larv=hci2_larv,HCI2pjuv=hci2_pjuv,
+         NCOPpjuv=ZOOpjuvN, NCOPben=ZOObenN,
+         SCOPpjuv=ZOOpjuvS, SCOPben=ZOObenS)
+to_omit<-c('SCOPben', 'SCOPpjuv','NCOPben', 'NCOPpjuv','X',
+           "CHLpjuv","PPpjuv",
+           'HCI2pjuv',"HCI2larv", "LUSI", "BakunSTI")
+envir_data2 =envir_data%>%dplyr::select(!any_of(to_omit))
+recruitmentdevs<- data.frame(read.csv("data-yellowtail/RecruitmentDeviations2025draft.csv"))%>%
+  filter(Datatreatment=="Expanded PacFIN")
+df = envir_data2%>%left_join(recruitmentdevs)
 data_years = 1994:2021 ## timeframe over which to stabilize environmental date
+colnames(df)
 dat = df %>% 
-  dplyr::select(!any_of( c('ZOOpjuv', 'ZOOben')))  %>%
-  left_join(dfa)
-envir_data = dat %>%  # drop terms not in model statement
-  dplyr::select(!any_of(c('sd','year','Y_rec','ZOOpjuv','ZOOben','LUSI','ONIlarv',"dfa","Type")))%>%  # drop terms not in model statement
-  dplyr::select(!any_of(c('sd','Y_rec','ZOOpjuv','ZOOben',"X","dfa")))%>% 
-  mutate_all(~ scale(.)) # drop terms not in model statement
-full_dat<-cbind(dat%>%select(year, Y_rec, sd, Type),envir_data)
+  dplyr::select(!any_of(to_omit))
+
+full_dat<-dat
 dat<-full_dat%>%  filter(year %in% data_years)
 
 #### Evaluating Correlations between Covariates #####
 
 threshold <-0.3 #assiging a threshold of correlation to filter out 
-envir_data <- envir_data[complete.cases(envir_data), ] # getting environmental data
-M = data.frame(cor(envir_data)) # generating a correlation matrix
+envir_data2 <- envir_data2[complete.cases(envir_data2), ] %>% 
+  dplyr::select(!any_of( c('year'))) # getting environmental data
+M = data.frame(cor(envir_data2)) # generating a correlation matrix
 M <- tibble::rownames_to_column(M, "xvar") #putting the rownames in their own column
 M<-M%>%pivot_longer(!xvar, names_to = 'yvar', values_to = 'corr') #pivoting to a longer table
 uncorr<-M%>%filter(abs(corr)<threshold) #generating the uncorrelated thresholds 
@@ -47,7 +63,7 @@ for(i in 1:nrow(corrvar2)){
 }
 
 #### Models to Fit ####
-covariates <- names(envir_data)
+covariates <- names(envir_data2)
 maxcovar <- 4 #max number of covars for a given model
 combinations <- lapply(1:maxcovar, function(i) {
   combn(covariates, i, simplify = FALSE)
@@ -196,8 +212,6 @@ train_data<- full_dat%>%filter(year %in% years)
 gam <- gam(as.formula(formula_str),data = train_data)
 summary(gam)
 gam.predict <- cbind(train_data, predict.gam(newdata=train_data,gam,se.fit=TRUE), residuals= residuals(gam))
-draw(gam)&
-  theme_bw()
 new_years<-2019:2024
 new_dat<-full_dat%>%filter(year %in% new_years) 
 
@@ -205,7 +219,7 @@ predicted<-data.frame(predict.gam(gam,se.fit=TRUE, newdata=new_dat))%>%
   mutate(year=new_years)
 
 gam.plot<- ggplot(gam.predict, aes(year, Y_rec)) +
-  geom_point(aes(shape=Type)) +
+  geom_point(aes(shape=type)) +
   geom_point(data=new_dat) +
   #geom_point(data=predicted, col="red",aes(year, fit))+
   geom_line(data=predicted, col="red",aes(year, fit))+
@@ -225,8 +239,30 @@ gam.plot<- ggplot(gam.predict, aes(year, Y_rec)) +
         plot.subtitle = element_text(hjust = 0.5))
 gam.plot
 
-png("Figures/ModelFit.png",width=10,height=6,units="in",res=1200)
-gam.plot
+gam.plot2<-ggplot(gam.predict, aes(year, Y_rec)) +
+  geom_point(aes(shape=type)) +
+  geom_point(data=new_dat) +
+  #geom_point(data=predicted, col="red",aes(year, fit))+
+  geom_line(data=predicted, col="red",aes(year, fit))+
+  #geom_point(data=predicted, col="red",aes(year, fit))+
+  geom_line(aes(year, fit)) +
+  geom_ribbon(aes(ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  geom_ribbon(data=predicted, fill="red",aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  theme_bw() +
+  ylab("ln(Recruitment Devaitions)")+
+  xlab("Year")+
+  scale_shape_manual(values=c(16,15),name = "Deviation Type",
+                     labels = c("Late Rec", "Main Rec"))+
+  theme(strip.text = element_text(size=6),
+        strip.background = element_rect(fill="white"),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+gam.plot2
+
+png("Figures/ModelFit.png",width=6,height=3,units="in",res=1200)
+gam.plot2
 dev.off()
 
 gam.res <- ggplot(gam.predict,  aes(fit,residuals)) +
@@ -243,13 +279,28 @@ png("Figures/ModelResiduals-unexpanded.png",width=6,height=5,units="in",res=1200
 gam.res
 dev.off()
 
-gam_rel<-draw(gam)&
-  theme_bw()
-gam_rel
+# Use smooth_estimates() to get the smooth estimates and confidence intervals
+smooth_data <- smooth_estimates(gam)%>%  # Or specify the smooth term you want to plot
+  add_constant(model_constant(gam)) %>% # Add the intercept
+  add_confint()%>% # Add the credible interval
+  pivot_longer(c(combos),names_to = "Smooth",values_to ="Value")%>%
+  select(-c(.by))
+observations<-full_dat%>%
+  select(year,Y_rec,combos)%>%
+  pivot_longer(c(combos),names_to = "Smooth",values_to ="Value")
+smooth_data <- na.omit(smooth_data )
 
-png("Figures/ModelPartials-unexpanded.png",width=8,height=8,units="in",res=1200)
-draw(gam)&
+partial_effects<-ggplot(smooth_data, aes(x = Value, y = .estimate)) +  # Setup the plot with the fitted values
+  facet_wrap(~Smooth)+
+  geom_line() + # Add estimated smooth
+  geom_ribbon(aes(ymax = .upper_ci, ymin = .lower_ci), fill = "black", alpha = 0.2) + # Add credible interval
+  geom_point(data = observations, aes(x = Value, y = Y_rec), color = "black") + # Add your data points
+  labs(x = "Standardized Oceanographic Conditions", y = "Partial Residual")+ # Add labels
+  geom_text(data = observations, aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
   theme_bw()
+partial_effects 
+png("Figures/ModelPartials.png",width=6,height=6,units="in",res=1200)
+partial_effects 
 dev.off()
 
 ts<-full_dat%>%select(c(combos,year))
@@ -261,22 +312,114 @@ tscov<-ggplot(pivot_longer(ts,col=combos,names_to = 'var',values_to = "val"),aes
   theme_bw()
 tscov
 
-png("Figures/OceanographicTS.png",width=8,height=8,units="in",res=1200)
+png("Figures/OceanographicTS.png",width=4,height=4,units="in",res=1200)
+tscov
+dev.off()
+#colnames(full_dat)
+
+tscov<-ggplot(pivot_longer(full_dat,cols=-c(year,Datatreatment,sd,type,Y_rec),names_to = 'var',values_to = "val"),aes(x=year,y=val))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~var)+
+  ylab("Oceanographic Index")+
+  xlab("Year")+
+  geom_hline(yintercept = 0,lty=2)+
+  theme_bw()
+tscov
+
+png("Figures/FullTS.png",width=7,height=6,units="in",res=1200)
 tscov
 dev.off()
 
 
+tscov<-ggplot(pivot_longer(full_dat,cols=-c(year,Datatreatment,sd,type,Y_rec),names_to = 'var',values_to = "val"),aes(x=year,y=val))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~var)+
+  ylab("Oceanographic Indices")+
+  xlab("Year")+
+  geom_hline(yintercept = 0,lty=2)+
+  theme_bw()
+tscov
 
+png("Figures/FullTS.png",width=12,height=8,units="in",res=1200)
+tscov
+dev.off()
+
+FWts<-envir_data%>%select('SCOPben', 'SCOPpjuv','NCOPpjuv','NCOPben',"CHLpjuv","PPpjuv","year")%>%
+pivot_longer(cols=-c(year),names_to = 'var',values_to = "val")
+  
+FWtsplot<-ggplot(FWts,aes(x=year,y=val))+
+  facet_wrap(~var)+
+   geom_line()+
+  geom_point()+
+  ylab("Food Web Indices")+
+  xlab("Year")+
+  geom_hline(yintercept = 0,lty=2)+
+  theme_bw()
+png("Figures/FwTS.png",width=6,height=6,units="in",res=1200)
+FWtsplot
+dev.off()
+
+Oceanographyts<-dat %>%
+  pivot_longer(cols=-c(year,Datatreatment, Y_rec, sd, type),names_to = 'var',values_to = "val")
+
+Oceanographyplot<-ggplot(Oceanographyts,aes(x=year,y=val))+
+  facet_wrap(~var)+
+  geom_line()+
+  geom_point()+
+  ylab("Oceanographic Indices")+
+  xlab("Year")+
+  geom_hline(yintercept = 0,lty=2)+
+  theme_bw()
+png("Figures/OcTS.png",width=7,height=6,units="in",res=1200)
+Oceanographyplot
+dev.off() 
 #### GAM diagnostics ####
 
 #checking for multicollinearity
-data.frame(cor(na.omit(full_dat %>% dplyr::select(combos)))) # drop terms not in model statement
-M<-cor(na.omit(full_dat %>% dplyr::select(combos))) # drop terms not in model statement
-corrplot.mixed(M)
-png("Figures/CorrPlot.png",width=8,height=8,units="in",res=1200)
-corrplot.mixed(M)
+dfx = envir_data2 
+dfx = na.omit(dfx) # na's mess up the cor function
+cor_xy = cor(dfx)
+
+graphics.off()
+png( paste0("Figures/oceanographic-correlations-among-variables.png"),
+     units = 'in', res=300, width = 6.5, height=6.5)
+# plot command
+corrplot::corrplot(cor_xy, hod='circle', type='lower', tl.cex = 0.5)
 dev.off()
 
+
+#checking for multicollinearity
+dfx = envir_data3
+dfx = na.omit(dfx) # na's mess up the cor function
+cor_xy = cor(dfx)
+
+graphics.off()
+png( paste0("Figures/oceanographic-correlations-among-variables.png"),
+     units = 'in', res=300, width = 12.5, height=12.5)
+# plot command
+corrplot::corrplot(cor_xy, hod='circle', method='number',type='lower', tl.cex = 1.5)
+dev.off()
+
+graphics.off()
+png( paste0("Figures/oceanographic-correlations-among-variables.png"),
+     units = 'in', res=300, width = 12.5, height=12.5)
+# plot command
+corrplot::corrplot(cor_xy, hod='circle', method='number',type='lower', tl.cex = 1.5)
+dev.off()
+
+#checking for multicollinearity
+dfx = envir_data%>%select('SCOPben', 'SCOPpjuv','NCOPpjuv','NCOPben',"CHLpjuv","PPpjuv")
+dfx = na.omit(dfx) # na's mess up the cor function
+cor_xy = cor(dfx)
+
+graphics.off()
+png( paste0("Figures/foodweb-correlations-among-variables.png"),
+     units = 'in', res=300, width = 7.5, height=7.5)
+# plot command
+corrplot::corrplot(cor_xy, hod='circle', type='lower', tl.cex =1.25)#method = 'number',
+dev.off()
 
 combos= c(results_arr_LFO5_AIC$var1[rankmod], results_arr_LFO5_AIC$var2[rankmod], results_arr_LFO5_AIC$var3[rankmod], results_arr_LFO5_AIC$var4[rankmod])
 linear_terms <- paste(combos, collapse = " + ") #pasting in model structure
@@ -284,21 +427,21 @@ formula_str_lm <- paste("Y_rec ~ ", linear_terms) #formula for selected model
 vifs<-vif(lm(as.formula(formula_str_lm),data = train_data))
 vifs.df<-data.frame(vifs)
 
-results_arr%>%
-  select(rankmod, rankmod_loo,var1, var2, var3, var4,AIC,deltaAIC,RMSE_LOO,rsq_full,dev.ex_full)%>%
+resultsSave<-results_arr_LFO5_AIC%>%
+  select(rankmod, var1, var2, var3, var4,AIC,deltaAIC,RMSE,mape,rsq_full,dev.ex_full)
 
 write.csv(vifs.df,"VIFs.csv")
 write.csv(M,"Correlation.csv")
-
+write.csv(resultsSave%>%filter(rankmod<=5),"BestModelsunxpanded.csv")
 #looking at qq, resid, and response with all rec devs
 diag_dat<-full_dat%>%filter(year %in% 1994:2021) 
 m2 = gam(as.formula(formula_str),
 data = diag_dat)
-png("Figures/gamdiag-unexpanded.png",width=6,height=6,units="in",res=1200)
+png("Figures/gamdiag.png",width=6,height=6,units="in",res=1200)
 par(mfrow=c(2,2))
 gam.check(m2,pch=19,cex=.3)
 dev.off()
-plotDiagnostics(m2)
+
 #looking for leverage years
 diag_dat$cooks.distance <- cooks.distance(m2)
 diag_dat$leverage <-influence.gam(m2)
@@ -385,7 +528,7 @@ dev_plot<-ggplot(results_arr_LFO5_AIC%>%select(dev.ex_pred), aes(dev.ex_pred)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-predcap<-ggarrange(rmse_plot,mape_plot,r2_plot,dev_plot)
+predcap<-ggarrange(rmse_plot,mape_plot,r2_plot,dev_plot, labels=c("A.", "B.", "C.", "D."))
 png("Figures/PredCap.png",width=8,height=6,units="in",res=1200)
 predcap
 dev.off()
@@ -470,7 +613,7 @@ for (j in jstart:n_year) {
 
 
 gam.jack<-cbind(gam.predict,jack=predictions[1:26],r2=rsqjack[1:26,1])
-ggplot(gam.jack, aes(year, Y_rec)) +
+jack<-ggplot(gam.jack, aes(year, Y_rec)) +
   #geom_point(aes(shape=Type)) +
   geom_point(data=new_dat) +
   geom_point(aes(y=jack),bg='yellow',pch=21,col="black") +
@@ -485,14 +628,19 @@ ggplot(gam.jack, aes(year, Y_rec)) +
   theme_bw() +
   xlim(c(1993,2019))+
   #ylim(c(-1.5,2))+
-  labs(title="Jackknife",
+ labs(#title="Jackknife",
        x="Year", y="ln(Recruitment Deviations)")+
   theme(strip.text = element_text(size=6),
         strip.background = element_rect(fill="white"),
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 
-ggplot(gam.jack, aes(r2)) +
+jack
+png("Figures/Jack.png",width=5,height=3.5,units="in",res=1200)
+jack
+dev.off()
+
+r2jack<-ggplot(gam.jack, aes(r2)) +
   geom_histogram(bins=10,fill="lightgrey", col="black")+
   xlim(c(0.4,0.8))+
   ylab("Frequency")+
@@ -500,15 +648,21 @@ ggplot(gam.jack, aes(r2)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-ggplot(gam.jack, aes(x=year, y=r2)) +
+r2jack2<-ggplot(gam.jack, aes(x=year, y=r2)) +
   geom_point(col="black")+
  # xlim(c(0.4,0.8))+
   ylim(c(0,1))+
   ylab("R-squared")+
-  geom_hline(yintercept=0.59,lty=2)+
+  geom_hline(yintercept=mean(gam.jack$r2),lty=2)+#0.59
   xlab("Year (removed)")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+jack
+png("Figures/Jackr2.png",width=3.5,height=5,units="in",res=1200)
+ggarrange(r2jack,r2jack2,ncol=1,labels=c("A.", "B."))
+dev.off()
+
 
 ### Nick's Jackknifing ####
 # add to file below ###
