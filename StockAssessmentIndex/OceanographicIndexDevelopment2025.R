@@ -205,6 +205,9 @@ predicted_last5<-predicted # saving predictions
 rankmod<-1 #which model rank do you want to look at?
 #the combos determine which selection you want based on rankmod
 combos= c(results_arr_LFO5_AIC$var1[rankmod], results_arr_LFO5_AIC$var2[rankmod], results_arr_LFO5_AIC$var3[rankmod], results_arr_LFO5_AIC$var4[rankmod])
+
+combos= c(results_arr_LFO5_rmse$var1[rankmod], results_arr_LFO5_rmse$var2[rankmod], results_arr_LFO5_rmse$var3[rankmod])
+
 smooth_terms <- paste("s(", combos, ", k = 3)", collapse = " + ") #pasting in model structure
 formula_str <- paste("Y_rec ~ ", smooth_terms) #formula for selected model
 years<-1994:2019 #these are the training years, 2019 is a bit critical since LST goes off the rails
@@ -303,11 +306,26 @@ png("Figures/ModelPartials.png",width=6,height=6,units="in",res=1200)
 partial_effects 
 dev.off()
 
+partial_effects<-ggplot(smooth_data, aes(x = Value, y = .estimate)) +  # Setup the plot with the fitted values
+  facet_wrap(~Smooth)+
+  geom_line() + # Add estimated smooth
+  geom_ribbon(aes(ymax = .upper_ci, ymin = .lower_ci), fill = "black", alpha = 0.2) + # Add credible interval
+  geom_point(data = observations%>%filter(year>2021), aes(x = Value, y = Y_rec), color = "black") + # Add your data points
+  labs(x = "Standardized Oceanographic Conditions", y = "Partial Residual")+ # Add labels
+  geom_text(data = observations%>%filter(year>2021), aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
+  theme_bw()
+partial_effects 
+png("Figures/ModelPartials.png",width=6,height=6,units="in",res=1200)
+partial_effects 
+dev.off()
+
 ts<-full_dat%>%select(c(combos,year))
 tscov<-ggplot(pivot_longer(ts,col=combos,names_to = 'var',values_to = "val"),aes(x=year,y=val))+
   geom_line()+
   geom_point()+
   facet_wrap(~var)+
+  ylab("Oceanographic Index")+
+  xlab("Year")+
   geom_hline(yintercept = 0,lty=2)+
   theme_bw()
 tscov
@@ -494,6 +512,7 @@ rmse_plot<-ggplot(results_arr_LFO5_AIC%>%select(RMSE), aes(RMSE)) +
   xlab("RMSE")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
+rmse_plot
 
 ci_MAPE = apply(results_arr_LFO5_AIC%>%select(mape),2, qt)
 mape_plot<-ggplot(results_arr_LFO5_AIC%>%select(mape), aes(mape)) +
@@ -506,25 +525,25 @@ mape_plot<-ggplot(results_arr_LFO5_AIC%>%select(mape), aes(mape)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-ci_R2 = apply(results_arr_LFO5_AIC%>%select(rsq_pred),2, qt)
-r2_plot<-ggplot(results_arr_LFO5_AIC%>%select(rsq_pred), aes(rsq_pred)) +
+ci_R2 = apply(results_arr_LFO5_AIC%>%select(rsq_full),2, qt)
+r2_plot<-ggplot(results_arr_LFO5_AIC%>%select(rsq_full), aes(rsq_full)) +
   geom_histogram(bins=10,fill="lightgrey", col="black")+
   #xlim(c(0.4,0.8))+
   ylab("Frequency")+
   geom_vline(xintercept=c(ci_R2), lty=2,lwd=1)+
-  geom_vline(xintercept=results_arr_LFO5_AIC$rsq_pred[1], col='red',lwd=1)+
-  xlab("R-squared (predicted time period)")+
+  geom_vline(xintercept=results_arr_LFO5_AIC$rsq_full[1], col='red',lwd=1)+
+  xlab("R-squared")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-ci_dev = apply(results_arr_LFO5_AIC%>%select(dev.ex_pred),2, qt)
-dev_plot<-ggplot(results_arr_LFO5_AIC%>%select(dev.ex_pred), aes(dev.ex_pred)) +
+r2_plot
+ci_dev = apply(results_arr_LFO5_AIC%>%select(dev.ex_full),2, qt)
+dev_plot<-ggplot(results_arr_LFO5_AIC%>%select(dev.ex_full), aes(dev.ex_full)) +
   geom_histogram(bins=10,fill="lightgrey", col="black")+
   #xlim(c(0.4,0.8))+
   ylab("Frequency")+
   geom_vline(xintercept=c(ci_dev), lty=2,lwd=1)+
-  geom_vline(xintercept=results_arr_LFO5_AIC$dev.ex_pred[1], col='red',lwd=1)+
-  xlab("Deviance Explained (predicted time period)")+
+  geom_vline(xintercept=results_arr_LFO5_AIC$dev.ex_full[1], col='red',lwd=1)+
+  xlab("Deviance Explained")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
@@ -613,9 +632,9 @@ for (j in jstart:n_year) {
 
 
 gam.jack<-cbind(gam.predict,jack=predictions[1:26],r2=rsqjack[1:26,1])
-jack<-ggplot(gam.jack, aes(year, Y_rec)) +
+jack<-ggplot(gam.jack, aes(year, fit)) +
   #geom_point(aes(shape=Type)) +
-  geom_point(data=new_dat) +
+  #geom_point(data=new_dat) +
   geom_point(aes(y=jack),bg='yellow',pch=21,col="black") +
   #geom_point(data=predicted, col="red",aes(year, fit))+
   #geom_line(data=predicted, col="red",aes(year, fit))+
@@ -728,3 +747,142 @@ boot.results <- cbind(x,boot.stats2)
 boot.final =  boot.results #rbind(boot.results,CL2)
 boot.final
 #write.table(boot.final,'R_jackknife-best-fit-stats.csv', sep=',',col.names = TRUE, row.names = FALSE)
+
+
+#### LOO ####
+
+
+cross_validation <-TRUE
+models <- list()
+results <- data.frame()
+predicted <- data.frame()
+jstart<-1
+
+#start by dredging all possible combinations of the GAMs
+
+for (i in seq_along(combinations)) {
+  # ps here represents a P-spline / penalized regression spline
+  # k represent the number of parameters / knots estimating function at, should be small
+  
+  # smooth on total release isn't needed when we're not working with jack rate
+  #smooth_terms <- paste("s( total_release, k =3) + s(", covariates[[i]], ", k = 3)")
+  smooth_terms <- paste("s(", combinations[[i]], ", k = 3)", collapse = " + ")
+  formula_str <- paste("Y_rec ~ ", smooth_terms)
+  predictions <- numeric(nrow(dat))
+  n_year <- length(unique(dat$year))
+  # Loop over each observation
+  for (j in jstart:n_year) {
+    train_index <- setdiff(jstart:n_year, j)  # All indices except the j-th
+    test_index <- j                 # The j-th index
+    
+    # Fit model on n-1 observations
+    gam_model <- gam(as.formula(formula_str),
+                     # weights = number_cwt_estimated,
+                     data = dat[which(dat$year != unique(dat$year)[j]), ])
+    
+    # Predict the excluded observation
+    predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
+  }
+  
+  # re-fit the model
+  gam_model <- gam(as.formula(formula_str),
+                   data = dat)
+  
+  # keep in mind RMSE is weird for binomial things
+  rmse <- sqrt(mean((dat$Y_rec - predictions)^2, na.rm=T))
+  r2<-summary(gam_model)$r.sq
+  dev.expl<-summary(gam_model)$dev.expl
+  # Extract variable names
+  var_names <- gsub("s\\(([^,]+),.*", "\\1", combinations[[i]])
+  # Store results with variable names padded to ensure there are always 3 columns
+  padded_vars <- c(var_names, rep(NA, 4 - length(var_names)))
+  
+  # Store results
+  models[[i]] <- gam_model
+  results <- rbind(results, data.frame(
+    ModelID = i,
+    AIC = AIC(gam_model),
+    RMSE = round(rmse,3),
+    rsq_full=round(r2,2),
+    dev.ex=round(dev.expl,4),
+    #AUC = auc,
+    #direction = direction,
+    var1 = padded_vars[1],
+    var2 = padded_vars[2],
+    var3 = padded_vars[3],
+    var4 = padded_vars[4]
+    
+    
+  ))
+  
+  predicted <- rbind(predicted, data.frame(
+    ModelID = i,
+    pred=predictions[jstart:n_year],
+    year=unique(dat$year)[jstart:n_year],
+    var1 = padded_vars[1],
+    var2 = padded_vars[2],
+    var3 = padded_vars[3],
+    var3 = padded_vars[4]
+    
+  ))
+  #saving the one step ahead predictions
+  print(i)
+}
+
+results_arr_LFO5_AIC
+results_arr_RMSE_LOO <- arrange(results,RMSE)
+
+results_full<-results_arr_RMSE_LOO%>%select(ModelID, RMSE)%>%
+  rename(RMSE_LOO=RMSE)%>%
+  left_join(results_arr_LFO5_AIC)
+arrange(results_full,AIC)
+arrange(results_full,RMSE)
+
+gam.loo<-predicted%>%
+  filter(ModelID==509)%>%
+  left_join(gam.predict)
+
+gam.jack<-cbind(gam.predict,jack=predictions[1:26],r2=rsqjack[1:26,1])
+gam.loo<-ggplot(gam.loo, aes(year, fit)) +
+  #geom_point(aes(shape=Type)) +
+  #geom_point(data=new_dat) +
+  geom_point(aes(y=pred),bg='yellow',pch=21,col="black") +
+  #geom_point(data=predicted, col="red",aes(year, fit))+
+  #geom_line(data=predicted, col="red",aes(year, fit))+
+  #geom_point(data=predicted, col="red",aes(year, fit),shape=15)+
+  geom_line(aes(year, fit)) +
+  geom_ribbon(aes(ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  #geom_ribbon(data=predicted, fill="red",aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+  #            alpha=0.2)+
+  theme_bw() +
+  xlim(c(1993,2019))+
+  #ylim(c(-1.5,2))+
+  labs(#title="Jackknife",
+    x="Year", y="ln(Recruitment Deviations)")+
+  theme(strip.text = element_text(size=6),
+        strip.background = element_rect(fill="white"),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+gam.loo
+
+png("Figures/gam.loo.png",width=5,height=3.5,units="in",res=1200)
+gam.loo
+dev.off()
+
+arrange(results_arr_LFO5_AIC,RMSE)%>%#ordered results by AIC as alternative
+  mutate(rankmod=seq_along(ModelID))%>%
+  filter(ModelID==509)
+arrange(results_arr_LFO5_AIC,mape)%>%#ordered results by AIC as alternative
+  mutate(rankmod=seq_along(ModelID))%>%
+  filter(ModelID==509)
+arrange(results_arr_LFO5_AIC,desc(rsq_full))%>%#ordered results by AIC as alternative
+  mutate(rankmod=seq_along(ModelID))%>%
+  filter(ModelID==509)
+arrange(results_arr_LFO5_AIC,desc(dev.ex_train))%>%#ordered results by AIC as alternative
+  mutate(rankmod=seq_along(ModelID))%>%
+  filter(ModelID==509)
+arrange(results_full,RMSE_LOO)%>%#ordered results by AIC as alternative
+  mutate(rankmod=seq_along(ModelID))%>%
+  filter(ModelID==509)
