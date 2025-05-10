@@ -1,0 +1,111 @@
+---
+title: "Time Series Models for EDNA"
+format: pdf
+editor: visual
+---
+
+# MARSS Model
+
+## Reading in the Data
+
+Here is an example of how you can set up this model, and I imagine have a similar structure to your data using phytoplankton from lake Washington, such that we are looking at the response of blue-green algae to temperatures. For your datasets "bluegreens" will be your salmon abundance and "temperature" will be your eDNA data. Rather than monthly data for multiple years, it will be daily.
+
+```{r}
+library(stats)
+library(MARSS)
+library(forecast)
+library(datasets)
+data(lakeWAplankton, package = "MARSS")
+
+fulldat <- lakeWAplanktonTrans 
+years <- fulldat[, "Year"] >= 1967 & fulldat[, "Year"] < 1974
+dat <- t(fulldat[years, c("Bluegreens")]) #to run data in MARSS, your data needs to be "transposed" this means you will have a bunch of columns that each correspond to a "time" of an observation. Before you do this, you want your response and predictor data to line up perfectly, so that each column in your response is the same as a column in your predictor. Its easiest it they are just a merged dataframe and then you pull each variable out separately!
+
+covariates <- t(fulldat[years, c("Temp")])
+
+```
+Before you can run the model, both the response and predictor should be z-scored such that they both have a mean of 0 and sd of 1. You can do it this way (which can make it easier to back transform your data later) or you can use the scale() function.
+```{r}
+# z-score the response variables
+the.mean <- apply(dat, 1, mean, na.rm = TRUE)
+the.sigma <- sqrt(apply(dat, 1, var, na.rm = TRUE))
+dat <- (dat - the.mean) * (1/the.sigma)
+
+the.meanC <- apply(covariates, 1, mean, na.rm = TRUE)
+the.sigmaC <- sqrt(apply(covariates, 1, var, na.rm = TRUE))
+covariates <- (covariates - the.meanC) * (1/the.sigmaC)
+```
+
+Once your data is prepared, you can now assign values to the matrices needed for MARSS. MARSS models are all just matrix math, and how to set these up can be confusing at first. Your model should have a very simple set up since you are fitting one TS at a time. This is a "observation error only" model, it sounds like your data structure should have both process and observation error, so consider this a fallback option! (its also a nice starting place to make sure everything is set up correctly)
+```{r}
+Q <- "zero" #this is your process error - its 0 which means we will only fit
+#observation error
+
+U <- "unconstrained"#this is a matrix that relates your "state" to obs error
+
+x0 <- "zero" #this is your starting value, it shouldn't matter too much for 
+#your models (basically where the model starts looking for a good "fit")
+
+B <- "identity" #since we are doing process - error only this will be an identity too
+
+Z <- "identity" #this is an identity matrix, since your model is fairly simple 
+#single population, it will be an "identity"...as you get into fancier 
+#multivariate stuff it will change 
+
+d <- covariates #this is where you put your covariates, right now they are influencing 
+#your observation error - in reality you will want it to be your process error covariate, 
+#so when we add that into the model we will move the covariates into the "c" matrices
+
+A <- "zero" #We set A="zero" because the data and covariates have been demeaned
+
+D <- "unconstrained" #this is the coefficient for your covariates. 
+
+y <- dat  # your data (salmon abundance)
+model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, D = D, 
+    d = d, x0 = x0)
+obs_only<- MARSS(y, model = model.list)
+```
+
+```{r}
+R <- A <- U <- "zero" # no observation error and demeaned data...so these are all 0!
+B <- "unconstrained" 
+Z <- "identity" 
+Q <- "equalvarcov" #this is how your variance-covariance matrix is set up - 
+#you only have 1 TS!
+C <- "unconstrained" #coefficient for your covariates! We have moved them to 
+#the c matrix so they influence the process rather than observations
+c = covariates
+model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R, 
+    C = C, c = c)
+process_only<- MARSS(dat, model = model.list)
+
+```
+
+If it converges with both above...lets try both types of error! If your R does not converge...that means you don't hav enough data to estimate observation error
+```{r}
+D <- d <- A <- U <- "zero" # you do not have covs in the d matrix
+Z <- "identity"
+B <- "unconstrained"
+Q <- "equalvarcov"
+C <- "unconstrained"
+c <- covariates
+R <- "diagonal and equal"
+x0 <- "unequal"
+tinitx <- 1
+model.list <- list(B = B, U = U, Q = Q, Z = Z, A = A, R = R, 
+    D = D, d = d, C = C, c = c, x0 = x0, tinitx = tinitx)
+kem <- MARSS(dat, model = model.list)
+
+```
+Lets take a look at the residuals - running acf on the residuals will tell us if the error is autocorrelated, they are not! Where a vertical line exceeds the dashed line tells you where the autocorrelation ends. For this model, we are good! The last vertical line to excede the dashed line is how many time steps you want to lag your data
+```{r}
+resids <- residuals(kem)
+autoplot(resids, plot.type = "acf")
+
+```
+Lets look at our "states". THis is our estimated model of bluegreen algae based as a function of the predictor temperature
+```{r}
+ggplot2::autoplot(kem, plot.type = "xtT")
+```
+
+Now, if you are not sure how to set up your matrix structures your can always try different ones and compare with AIC!

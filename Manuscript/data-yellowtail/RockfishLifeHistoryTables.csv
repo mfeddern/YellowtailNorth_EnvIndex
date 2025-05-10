@@ -1,0 +1,29 @@
+﻿Stage,Time period ,Depth,Hypothesis ,Name,Covariates,Data Source
+Preconditioning,Jul (Year 0) - Mar (Year 1),90 - 180 m ,"(H1) Higher temperature (degree days) increases food demand, resulting in lower egg production, ultimately resulting in lower recruitment. ",DDpre,Degree days,GLORYS
+,,,(H2) El Niño/La Niña cause shifts in temeprature and precipitation which lead to changes in recruitment success.,ONIpre,Ocean Niño Index,Leising et al. (2024)
+Copulation,Aug - Oct,90 - 180 m ,(H3) Temperature may act as a spawning cue for initiation of copulation. ,Tcop,Temperature,GLORYS
+Egg fertilization ,Nov - Dec,90 - 180 m ,(H4) Higher temperature (degree days) affects delayed fertilization and development of the embryo. ,DDegg,Degree days,GLORYS
+Parturition,Jan - Apr (peak in Feb),0 - 180 m ,(H5) Temperature may act as a cue for birth of live larvae. ,Tpart,Temperature,GLORYS
+,,,(H6) Location of mixed layer depth may limit where in the water column mothers give birth. ,MLDpart,Location of mixed layer depth ,GLORYS
+Larvae,Feb - Mar,0 - 90 m ,"(H7) Growth/predation hypothesis: Growth rate is faster in warmer water, leading to reduced time vulnerable to predators.",DDlarv,Degree days,GLORYS
+,,,(H8) Cross-shelf transport to settlement habitat affects recruitment. ,CSTlarv,Net cross-shelf transport,GLORYS
+,,,(H9) Long-shore transport to settlement habitat affects recruitment. ,LSTlarv,Net long-shore transport,GLORYS
+,,,"(H10) Location of mixed layer deph may limit where they are able to move in the water column, affecting transport and recruitment. ",MLDlarv,Location of mixed layer depth ,GLORYS
+,,,(H11) The presence of cool upwelled waters in the surface mixed-layer affects the availability of nutrients and food for growth. ,HCIlarv,Habitat Compression Index,Leising et al. (2024)
+,,,(H12) El Niño/La Niña cause shifts in temeprature and precipitation which lead to changes in recruitment success.,ONIlarv,Ocean Niño Index,Leising et al. (2024)
+,,,"(H13) Changes in wind speed and direction impact upwelling/downwelling processes, ultimately impacing recruitment.",PDOlarv,Pacific Decadal Oscillation ,Leising et al. (2024)
+Pelagic juvenile,Apr - Aug,30 - 130 m ,"(H14) Growth/predation hypothesis: Growth rate is faster in warmer water, leading to reduced time vulnerable to predators.",DDpjuv,Degree days,GLORYS
+,,,(H15) Cross-shelf transport to settlement habitat affects recruitment. ,CSTpjuv,Net cross-shelf transport,GLORYS
+,,,(H16) Long-shore transport to settlement habitat affects recruitment. ,LSTpjuv,Net long-shore transport,GLORYS
+,,,"(H17) Location of mixed layer deph may limit where they able to move in the water column, affecting transport and recruitment. ",MLDpjuv,Location of mixed layer depth ,GLORYS
+,,,(H18) Food availability impacts growth and survival.,ZOOpjuv,Zooplankton availability,Leising et al. (2024)
+,,,(H19) The presence of cool upwelled waters in the surface mixed-layer affects the availability of nutrients and food for growth. ,HCIpjuv,Habitat Compression Index,Leising et al. (2024)
+,,,(H20) El Niño/La Niña cause shifts in temeprature and precipitation which lead to changes in recruitment success.,ONIpjuv,Ocean Niño Index,Leising et al. (2024)
+,,,"(H21) Changes in wind speed and direction impact upwelling/downwelling processes, ultimately impacing recruitment. ",PDOpjuv,Pacific Decadal Oscillation ,Leising et al. (2024)
+,,,(H22) Coastal upwelling impacts nutrient and food availability which contributes to growth and survival. ,CutiSTIpjuv,Coastal Upwelling Transport Index,Jorgensen et al. (2024)
+,,,(H23) Coastal upwelling impacts nutrient and food availability which contributes to growth and survival. ,CutiTUMIpjuv,Coastal Upwelling Transport Index,Jorgensen et al. (2024)
+,,,"(H24) Nitrate is essential for primary productivity, impacting presence of phytoplankton available as a food source. ",BeutiSTIpjuv,Biological Effective Upwelling Transport Index,Jorgensen et al. (2024)
+,,,"(H25) Nitrate is essential for primary productivity, impacting presence of phytoplankton available as a food source. ",BeutiTUMIpjuv,Biological Effective Upwelling Transport Index,Jorgensen et al. (2024)
+Benthic juvenile,Sept - Dec,180 - 549 m,"(H26) Growth/predation hypothesis: Growth rate is faster in warmer water, leading to reduced time vulnerable to predators.",DDben,Degree days,GLORYS
+,,,(H27) Food availability impacts growth and survival. ,ZOOben,Zooplankton availability,Leising et al. (2024)
+,,,(H28) Length of the upwelling season impacts nutrient and food availability which contributes to growth and survival. ,LUSI,Length of Upwelling Season Index,Leising et al. (2024)

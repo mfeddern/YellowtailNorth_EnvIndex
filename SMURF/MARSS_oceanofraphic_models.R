@@ -7,7 +7,7 @@ library(mgcv)
 library(tidyr)
 library(corrplot)
 library(reshape2)
-
+autoplot(resids, plot.type = "acf")
 #### Reading in Data ####
 data <-read.csv('Oceanography_DailyMean.csv')
 head(data)

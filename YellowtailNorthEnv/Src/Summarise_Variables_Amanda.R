@@ -48,14 +48,23 @@ Beuti_STI<- read.csv('data-yellowtail/Raw_Environmental/beuti_sti.csv')%>%
   select(year, BeutiSTIpjuv)
 
 
-BEUTI_TUMI<-read.csv('data-yellowtail/Raw_Environmental/beuti_tumi.csv')%>%
-  select(X, X45N, X46N, X47N)%>%
-  pivot_longer(cols=-X,names_to='location', values_to='BeutiTUMI')%>%
-  group_by(X)%>%
+BEUTI_TUMI<-read.csv('data-yellowtail/Raw_Environmental/BEUTI_tumi.csv')%>%
+  select(Year, 'X45', 'X46', 'X47')%>%
+  pivot_longer(cols=-Year,names_to='location', values_to='BeutiTUMI')%>%
+  group_by(Year)%>%
   dplyr::summarise(BeutiTUMI=mean(BeutiTUMI))%>%
   mutate(BeutiTUMIpjuv=(BeutiTUMI-mean(BeutiTUMI))/sd(BeutiTUMI))%>%
-  dplyr::rename(year=X)%>%
-  select(year, BeutiTUMIpjuv)
+  select(Year, BeutiTUMIpjuv)%>%
+  mutate(year=Year)
+
+BEUTI_STI<-read.csv('data-yellowtail/Raw_Environmental/BEUTI_sti.csv')%>%
+  select(Year, 'X45', 'X46', 'X47')%>%
+  pivot_longer(cols=-Year,names_to='location', values_to='BeutiSTI')%>%
+  group_by(Year)%>%
+  dplyr::summarise(BeutiSTI=mean(BeutiSTI))%>%
+  mutate(BeutiSTIpjuv=(BeutiSTI-mean(BeutiSTI))/sd(BeutiSTI))%>%
+  select(Year, BeutiSTIpjuv)%>%
+  mutate(year=Year)
 
 CUTI_STI<- read.csv('data-yellowtail/Raw_Environmental/cuti_sti.csv')%>%
   select(X, X45N, X46N, X47N)%>%
@@ -84,15 +93,15 @@ bakun_sti<- read.csv('data-yellowtail/Raw_Environmental/bakun_sti.csv')%>%
   dplyr::summarise(bakun_sti=mean(bakun_sti))%>%
   mutate(bakun_sti=scale(bakun_sti))
 
-Env_Indices<-join_all(list(CUTI_STI, CUTI_TUMI,BEUTI_TUMI, Beuti_STI,chl_index,pp_index,bakun_sti), by = 'year')
+Env_Indices<-join_all(list(CUTI_STI, CUTI_TUMI,BEUTI_TUMI, BEUTI_STI,chl_index,pp_index,bakun_sti), by = 'year')
 
 #write.csv(Env_Indices, "data-yellowtail/Processed_Environmental/2024updateGLORYs.csv")
 
 write.csv(Env_Indices, "data-yellowtail/Processed_Environmental/2024update_Env_Indices.csv")
 
-glorys<-read.csv('Data/Processed_Environmental/glorys-data-annual-yellowtail_subset.csv')
+glorys<-read.csv('data-yellowtail/Processed_Environmental/glorys-data-annual-yellowtail_subset.csv')
 glorys_full<-glorys%>%
-  left_join(Env_Indices)
+  left_join(Env_Indices%>%select(-Year))
 corplotdat<-cor(na.omit(scale(glorys_full%>%select(-year))))
 corrplot(corplotdat, method='number') # colorful number  
 
@@ -107,6 +116,9 @@ dev.off()
 CUTI_corr<- read.csv('data-yellowtail/Raw_Environmental/cuti_sti.csv') %>%
 select(-X)
 corrplot.mixed(cor(na.omit(CUTI_corr)), lower = 'circle', upper = 'number')
+
+
+
 
 
 combine_data<-read.csv("data-yellowtail/02_DATA_Combined_glorys_yellowtail.csv")%>%

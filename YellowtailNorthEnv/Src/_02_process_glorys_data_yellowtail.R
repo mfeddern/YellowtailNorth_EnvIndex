@@ -50,6 +50,7 @@ glorys_ts = left_join(glorys_ts,Tpart)
 ################################################################################
 ## MONTHLY TIME SERIES #########################################################
 ################################################################################
+glorys_ts = data.table(read.csv(paste0("data-yellowtail/glorys-data-annual-yellowtail_2024.csv")))
 
 # load and combine data
 cst_monthly = data.table(read.csv(paste0("data-yellowtail/glorys-monthly-means-cst.csv")))
