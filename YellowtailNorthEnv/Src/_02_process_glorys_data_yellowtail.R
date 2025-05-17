@@ -166,10 +166,12 @@ glorys_ts = left_join(glorys_ts, env)
 fwrite(glorys_ts, paste0("2024Env-annual-yellowtail.csv"))
 
 standardized <-data.frame(glorys_ts)%>%
+  filter(year>1993 & year <2019)%>%
   dplyr::select(!any_of(c('year')))%>% 
   mutate_all(~ scale(.))
-standardized_env<-cbind(year=data.frame(glorys_ts)$year,standardized)
+standardized_env<-cbind(year=data.frame(glorys_ts%>%
+                                          filter(year>1993 & year <2019))$year,standardized)
 
-fwrite(standardized_env, paste0("2024Env-annual-yellowtail-standardized.csv"))
+fwrite(standardized_env, paste0("2018Env-annual-yellowtail-standardized.csv"))
 
 

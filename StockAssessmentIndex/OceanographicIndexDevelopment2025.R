@@ -563,7 +563,7 @@ partial_effects<-ggplot(smooth_data, aes(x = Value, y = .estimate)) +  # Setup t
   geom_text(data = observations, aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
   theme_bw()
 partial_effects 
-png("Figures/LOO Model/ModelPartialsRMSE.png",width=6,height=6,units="in",res=1200)
+png("Figures/LOO Model/ModelPartialsLINESPOINTS.png",width=6,height=6,units="in",res=1200)
 partial_effects 
 dev.off()
 

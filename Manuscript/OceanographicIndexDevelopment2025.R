@@ -37,7 +37,7 @@ envir_data2 =envir_data%>%dplyr::select(!any_of(to_omit))
 recruitmentdevs<- data.frame(read.csv("data-yellowtail/RecruitmentDeviations2025draft.csv"))%>%
   filter(Datatreatment=="Expanded PacFIN")
 df = envir_data2%>%left_join(recruitmentdevs)
-data_years = 1996:2019 ## timeframe over which to stabilize environmental date
+data_years = 1996:2021 ## timeframe over which to stabilize environmental date
 colnames(df)
 dat = df %>% 
   dplyr::select(!any_of(to_omit))
@@ -191,52 +191,80 @@ combos= c(results_arr_RMSE_LOO$var1[rankmod], results_arr_RMSE_LOO$var2[rankmod]
 smooth_terms <- paste("s(", combos, ", k = 3)", collapse = " + ") #pasting in model structure
 formula_str <- paste("Y_rec ~ ", smooth_terms) #formula for selected model
 years<-1996:2021
-years5<-1996:2019
-##### Generating pred error for the training period #####
-yearmin<- 2019
-yearmax<-2021
+gam_data<- full_dat%>%filter(year %in% years) 
+gam <- gam(as.formula(formula_str),data = gam_data)
 
-train_data<- full_dat%>%filter(year %in% years) 
-gam <- gam(as.formula(formula_str),data = train_data)
-train_data5<- full_dat%>%filter(year %in% years5) 
-gam5 <- gam(as.formula(formula_str),data = train_data5)
-summary(gam)
-gam.train <- cbind(train_data, predict.gam(newdata=train_data,gam,se.fit=TRUE), residuals= residuals(gam))
-Vb <- vcov(gam)
-N <- 10000
-BUdiff <- rmvn(N, mu = rep(0, nrow(Vb)),V = Vb)
-Cg <- predict(gam, type = "lpmatrix")
-simDev <- Cg %*% t(BUdiff)
-absDev <- abs(sweep(simDev, 1, gam.train$se.fit, FUN = "/"))
-masd <- apply(absDev, 2L, max)
-crit2 <- quantile(masd, prob = 0.95, type = 8)
+#### Predicting the last 5 years ####
+
+yearstrain<- 1996:2016
+yearspredict<- 2017:2021
+
+train_data<- full_dat%>%filter(year %in% yearstrain) 
+gam_train <- gam(as.formula(formula_str),data = train_data)
+gam5 <- gam(as.formula(formula_str),data = train_data)
+predlast5<-predict.gam(gam5,newdata=full_dat%>%filter(year %in% yearspredict))
+gam2 <- gam(as.formula(formula_str),data = full_dat%>%filter(year %in% 1996:2019))
+predlast2<-predict.gam(gam2,newdata=full_dat%>%filter(year %in% 2020:2021))
+
+
 train_dat_pred <- full_dat%>%left_join(gam.train%>%select(year, fit, se.fit))%>%
-  mutate(uprP = fit + (crit2 * se.fit),
-                                  lwrP = fit - (crit2 * se.fit),
-                                  uprCI = fit + (2 * se.fit),
-                                  lwrCI = fit - (2 * se.fit))%>%
-  mutate(se.p=(uprP-fit)/1.96)%>%
   left_join(predicted%>%filter(ModelID==616)%>%select(year,pred))%>%
-  left_join(data.frame(year=seq(yearmin,yearmax),
-                    last5 = predict.gam(gam5,newdata=train_dat_pred%>%filter(year>=yearmin&year<=yearmax)))
-  )%>%
+  left_join(data.frame(year=yearspredict,
+                       last5 =predlast5))%>%
+  left_join(data.frame(year=2020:2021,
+                       last2 =predlast2))%>%
   mutate(type2=ifelse(type=="Main_RecrDev","Main", "Late"))
 
 
+#### Last 5 1-year at a time #####
+#start by dredging all possible combinations of the GAMs
+pred5<- data.frame()
+startval<-1
+j1<- 2017
+nyear <- 5
+jstart<- 23
+jend=jstart+nyear
+
+  for (j in jstart:jend) {
+    train_index <- 1996:2017  # All indices except the j-th
+    test_index <- j                # The j-th index
+    
+    # Fit model on n-1 observations
+    gam_model <- gam(as.formula(formula_str),
+                     # weights = number_cwt_estimated,
+                     data = dat[which(dat$year %in% unique(dat$year)[startval:(j-1)]), ])
+    newdata<-dat[which(dat$year == unique(dat$year)[j]), ]
+    # Predict the excluded observation
+    pred5 <- rbind(pred5,cbind(predict(gam_model, newdata = newdata), newdata$year))
+  }
+colnames(pred5)<-c("pred5", "year")
+train_dat_pred<-left_join(train_dat_pred,pred5)
 #### Plotting Highest Ranked Model ####
 # Fit a model that includes multiple variables from the top model
-gam.plot<- ggplot(train_dat_pred, aes(year, Y_rec)) +
-  geom_point(data=na.omit(train_dat_pred%>%filter(year>1995)%>%select(year, Y_rec, type2)),aes(shape=type2)) +
-  geom_point(aes(y=last5, fill = "Predicted"),pch=21) +
-  geom_point(data=train_dat_pred%>%filter(year>2019),aes(y=pred,fill= "Jackknife"), pch=21) +
-  geom_point(data=train_dat_pred%>%filter(year<2019),aes(y=pred,fill= "Jackknife"), pch=24) +
-  geom_line(data=train_dat_pred%>%filter(year<2019),aes(year, fit)) +
-  geom_ribbon(data=train_dat_pred%>%filter(year<2019),aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+sizept=1.75
+gam.plot<- ggplot(train_dat_pred%>%filter(year  %in% 1996:2021), aes(x=year)) +
+  geom_line(data=train_dat_pred,aes(y=fit)) +
+  geom_ribbon(data=train_dat_pred,aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
               alpha=0.2)+
+  geom_point(aes(y=Y_rec,fill="Recruitment \n Deviation",shape=type2),size=sizept) +
+  geom_point(aes(y=pred,fill= "Leave-one-out",shape=type2), pch=21,size=sizept ) +
+ # geom_point(aes(y=last2, fill = "Last 2",shape=type2), pch=24,size=sizept) +
+  geom_point(data=train_dat_pred%>%filter(year>2018),aes(y=last5, fill = "Last 5",shape=type2), pch=24,size=sizept) +
+  geom_point(data=train_dat_pred%>%filter(year<2019),aes(y=last5, fill = "Last 5",shape=type2), pch=21,size=sizept) +
+  geom_point(data=train_dat_pred%>%filter(year>2018),aes(y=pred5, fill = "One year ahead",shape=type2), pch=24,size=sizept) +
+  geom_point(data=train_dat_pred%>%filter(year<2019),aes(y=pred5, fill = "One year ahead",shape=type2), pch=21,size=sizept) +
+  scale_shape_manual(name="Recruitment Deviation \n Type",values=c(24,21))+
+  scale_fill_manual(name = "Diagnostic",
+                    values = c("Last 5" = '#dd4124',
+                               "Leave-one-out" = '#0f85a0',
+                               "One year ahead" = "#edd746",
+                              "Recruitment \n Deviation"= "black"
+                              ), 
+                    labels = c("Last 5","Leave-one-out","One year ahead", "Recruitment \n Deviation"))+
   theme_classic() +
   labs(x="Year", y="ln(Recruitment Deviations)")+
   ylim(c(-2,1.5))+
-  labs(fill = "Diagnostic", shape="Recruitment Deviation \n Type")+
+  #labs(fill = "Diagnostic", shape="Recruitment Deviation \n Type")+
   geom_hline(yintercept=0,lty=2)+
   theme(strip.text = element_text(size=6),
         strip.background = element_rect(fill="white"),
@@ -252,8 +280,8 @@ dev.off()
 
 #### Partial Effects Figures ####
 # Use smooth_estimates() to get the smooth estimates and confidence intervals
-smooth_data <- smooth_estimates(gam5)%>%  # Or specify the smooth term you want to plot
-  add_constant(model_constant(gam5)) %>% # Add the intercept
+smooth_data <- smooth_estimates(gam)%>%  # Or specify the smooth term you want to plot
+  add_constant(model_constant(gam)) %>% # Add the intercept
   add_confint()%>% # Add the credible interval
   pivot_longer(c(combos),names_to = "Smooth",values_to ="Value")%>%
   select(-c(.by))
@@ -267,9 +295,9 @@ partial_effects<-ggplot(smooth_data, aes(x = Value, y = .estimate)) +  # Setup t
   geom_line() + # Add estimated smooth
   xlim(c(-2,3))+
   geom_ribbon(aes(ymax = .upper_ci, ymin = .lower_ci), fill = "black", alpha = 0.2) + # Add credible interval
-  geom_point(data = observations, aes(x = Value, y = Y_rec), color = "black") + # Add your data points
+  geom_point(data = observations%>%filter(year %in% years), aes(x = Value, y = Y_rec), color = "black") + # Add your data points
   labs(x = "Standardized Ecological Conditions", y = "Partial Residual")+ # Add labels
-  geom_text(data = observations, aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
+  geom_text(data = observations%>%filter(year %in% years), aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
   theme_classic()
 partial_effects 
 png("Figures/Figure4.png",width=9,height=4,units="in",res=1200)
@@ -371,7 +399,7 @@ rsqjack <- data.frame()
 n_year <- length(unique(dat$year))
 
 # LOO cv
-dat<-train_data%>%filter(year<2020)
+dat<-gam_data
 for (j in jstart:n_year) {
   train_index <- setdiff(jstart:n_year, j)  # All indices except the j-th
   test_index <- j                 # The j-th index
@@ -385,7 +413,7 @@ for (j in jstart:n_year) {
   rsqjack<-rbind(rsqjack,rsq)
   }
 
-gam.jack<-cbind(train_data,jack=predictions[1:26],r2=rsqjack[1:26,1])
+gam.jack<-cbind(gam_data,jack=predictions[1:26],r2=rsqjack[1:26,1])
 
 #### R2 comparison ####
 
@@ -407,6 +435,9 @@ r2jack2<-ggplot(gam.jack, aes(x=year, y=r2)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+png("Figures/Figure5.png",width=4,height=6,units="in",res=1200)
+ggarrange(r2jack,r2jack2, ncol=1)
+dev.off()
 
 
 png("Figures/A3?.png",width=6,height=6,units="in",res=1200)
@@ -442,9 +473,40 @@ arranged_rec<-ggarrange(rec_foodweb,rec_ocean, ncol = 1, heights=c(1.5,4.25))
 
 full_rec<-annotate_figure(arranged_rec,
                          bottom = text_grob("Standardized Index"),
-                         left = text_grob("Recruitment Deviationgs", rot=90)
+                         left = text_grob("Recruitment Deviations", rot=90)
 )
 full_rec
 png("Figures/A2.png",width=10,height=8,units="in",res=1200)
 full_rec
 dev.off()
+
+
+##### Generating pred error for the training period #####
+yearmin<- 2019
+yearmax<-2021
+
+train_data<- full_dat%>%filter(year %in% years) 
+gam <- gam(as.formula(formula_str),data = train_data)
+train_data5<- full_dat%>%filter(year %in% years5) 
+gam5 <- gam(as.formula(formula_str),data = train_data5)
+summary(gam)
+gam.train <- cbind(train_data, predict.gam(newdata=train_data,gam,se.fit=TRUE), residuals= residuals(gam))
+Vb <- vcov(gam)
+N <- 10000
+BUdiff <- rmvn(N, mu = rep(0, nrow(Vb)),V = Vb)
+Cg <- predict(gam, type = "lpmatrix")
+simDev <- Cg %*% t(BUdiff)
+absDev <- abs(sweep(simDev, 1, gam.train$se.fit, FUN = "/"))
+masd <- apply(absDev, 2L, max)
+crit2 <- quantile(masd, prob = 0.95, type = 8)
+train_dat_pred <- full_dat%>%left_join(gam.train%>%select(year, fit, se.fit))%>%
+  mutate(uprP = fit + (crit2 * se.fit),
+         lwrP = fit - (crit2 * se.fit),
+         uprCI = fit + (2 * se.fit),
+         lwrCI = fit - (2 * se.fit))%>%
+  mutate(se.p=(uprP-fit)/1.96)%>%
+  left_join(predicted%>%filter(ModelID==616)%>%select(year,pred))%>%
+  left_join(data.frame(year=seq(yearmin,yearmax),
+                       last5 = predict.gam(gam5,newdata=train_dat_pred%>%filter(year>=yearmin&year<=yearmax)))
+  )%>%
+  mutate(type2=ifelse(type=="Main_RecrDev","Main", "Late"))
