@@ -32,12 +32,12 @@ envir_data = df %>%
          HCI2larv=hci2_larv,HCI2pjuv=hci2_pjuv,
          NCOPpjuv=ZOOpjuvN, NCOPben=ZOObenN,
          SCOPpjuv=ZOOpjuvS, SCOPben=ZOObenS)
-to_omit<-c('X',"Year","Year.1","LUSI", "BakunSTI")
+to_omit<-c('X',"Year","Year.1","LUSI", "BakunSTI", "HCI2larv", "HCI2pjuv", "HCIlarv", "HCIpjuv")
 envir_data2 =envir_data%>%dplyr::select(!any_of(to_omit))
 recruitmentdevs<- data.frame(read.csv("data-yellowtail/RecruitmentDeviations2025draft.csv"))%>%
   filter(Datatreatment=="Expanded PacFIN")
 df = envir_data2%>%left_join(recruitmentdevs)
-data_years = 1996:2021 ## timeframe over which to stabilize environmental date
+data_years = 1998:2021 ## timeframe over which to stabilize environmental date
 colnames(df)
 dat = df %>% 
   dplyr::select(!any_of(to_omit))
@@ -62,9 +62,9 @@ for(i in 1:nrow(corrvar2)){
 }
 
 #### Generate Null Model ####
-predict(gam(Y_rec ~ 1, data=full_dat))
+predict(gam(Y_rec ~ 1, data=dat))
 
-null<-full_dat%>%mutate(sr_null = 0, mean_null = -0.0917625)%>%filter(year<=2019)
+null<-dat%>%mutate(sr_null = 0, mean_null = -0.0917625)
 
 sqerror<-(null$sr_null-null$Y_rec)^2
 rmse_sr_full <- sqrt(mean(sqerror, na.rm=T))
@@ -136,9 +136,10 @@ for (i in seq_along(combinations)) {
   # re-fit the model
   gam_model <- gam(as.formula(formula_str),
                    data = dat)
-  
+  predict_mod <- predict(gam_model)
   # keep in mind RMSE is weird for binomial things
-  rmse <- sqrt(mean((dat$Y_rec - predictions)^2, na.rm=T))
+  rmse_loo <- sqrt(mean((dat$Y_rec - predictions)^2, na.rm=T))
+  rmse <- sqrt(mean((dat$Y_rec -  predict_mod)^2, na.rm=T))
   r2<-summary(gam_model)$r.sq
   dev.expl<-summary(gam_model)$dev.expl
   # Extract variable names
@@ -151,10 +152,12 @@ for (i in seq_along(combinations)) {
   results <- rbind(results, data.frame(
     ModelID = i,
     AIC = AIC(gam_model),
+    RMSE_loo = round(rmse_loo,3),
     RMSE = round(rmse,3),
     rsq_full=round(r2,2),
     dev.ex=round(dev.expl,4),
     rmse_imp=(rmse_sr_full-rmse)/rmse_sr_full, 
+    rmse_ratio=rmse/rmse_sr_full,
     #AUC = auc,
     #direction = direction,
     var1 = padded_vars[1],
@@ -181,31 +184,136 @@ for (i in seq_along(combinations)) {
 results <- arrange(results,AIC)%>%
   mutate(rankmod=seq_along(ModelID))%>%
   mutate(deltaAIC=AIC-min(AIC))
-results_arr_RMSE<- arrange(results,RMSE)
+results_arr_RMSE<- arrange(results,RMSE_loo)
 results_arr_AIC<- arrange(results,AIC)
+arrange(results,desc(rmse_imp))
+results_arr_AIC%>%filter(rmse_ratio<1)
+### Calculating Relative Variable Importance ###
 
+# Create a baseline model with only the intercept
+
+baseline_rmse <-rmse_sr_full
+
+# we can calculate the marginal improvement for each covariate
+results_arr_RMSE$n_cov <- ifelse(!is.na(results_arr_RMSE$var1), 1, 0) + ifelse(!is.na(results_arr_RMSE$var2), 1, 0) +
+  ifelse(!is.na(results_arr_RMSE$var3), 1, 0) + ifelse(!is.na(results_arr_RMSE$var4), 1, 0)
+marginals <- data.frame(cov = covariates, "rmse_01" = NA, "rmse_12" = NA, "rmse_23" = NA,
+                        "aic_01" = NA, "aic_12" = NA, "aic_23" = NA)
+results<-results_arr_RMSE%>%filter(n_cov<4)%>%select(-var4)
+results%>%filter(n_cov==1)
+for(i in 1:length(covariates)) {
+  sub <- dplyr::filter(results, n_cov == 1,
+                       var1 == covariates[i])
+   marginals$rmse_01[i] <- (baseline_rmse-sub$RMSE) / baseline_rmse
+  marginals$aic_01[i] <- AIC(gam_model) - sub$AIC
+  
+  # next look at all values of models that have 2 covariates and include this model
+  sub1 <- dplyr::filter(results, n_cov == 1)
+  sub2 <- dplyr::filter(results, n_cov == 2) %>%
+    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0)) %>%
+    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
+  # loop over every variable in sub2, and find the simpler model in sub1 that just represents the single covariate
+  sub2$rmse_diff <- 0
+  sub2$AIC_diff <- 0
+  for(j in 1:nrow(sub2)) {
+    vars <- sub2[j,c("var1", "var2")]
+    vars <- vars[which(vars != covariates[i])]
+    indx <- which(sub1$var1 == as.character(vars))
+    sub2$rmse_diff[j] <- (sub1$RMSE[indx]-sub2$RMSE[j]) / sub1$RMSE[indx]
+    sub2$AIC_diff[j] <- sub1$AIC[indx] - sub2$AIC[j]
+  }
+  
+  # Finally compare models with 3 covariates to models with 2 covariates
+  sub2_all <- dplyr::filter(results, n_cov == 2)
+  # Apply a function across the rows to sort the values in var1 and var2
+  sorted_names <- t(apply(sub2_all[, c("var1", "var2")], 1, function(x) sort(x)))
+  # Replace the original columns with the sorted data
+  sub2_all$var1 <- sorted_names[, 1]
+  sub2_all$var2 <- sorted_names[, 2]
+  
+  sub3 <- dplyr::filter(results, n_cov == 3) %>%
+    dplyr::mutate(keep = ifelse(var1 == covariates[i],1,0) + ifelse(var2 == covariates[i],1,0) + ifelse(var3 == covariates[i],1,0)) %>%
+    dplyr::filter(keep == 1) %>% dplyr::select(-keep)
+  sub3$rmse_diff <- 0
+  sub3$AIC_diff <- 0
+  for(j in 1:nrow(sub3)) {
+    vars <- sub3[j,c("var1", "var2","var3")]
+    vars <- sort(as.character(vars[which(vars != covariates[i])]))
+    # find the same in sub2
+    indx <- which(paste(sub2_all$var1, sub2_all$var2) == paste(vars, collapse=" "))
+    sub3$rmse_diff[j] <- (sub2_all$RMSE[indx]-sub3$RMSE[j]) / sub2_all$RMSE[indx]
+    sub3$AIC_diff[j] <- sub2_all$AIC[indx] - sub3$AIC[j]
+  }
+  
+  # Fill in summary stats
+  marginals$rmse_12[i] <- mean(sub2$rmse_diff)
+  marginals$aic_12[i] <- mean(sub2$AIC_diff)
+  marginals$rmse_23[i] <- mean(sub3$rmse_diff)
+  marginals$aic_23[i] <- mean(sub3$AIC_diff)
+}
+
+# Calculate avergages of averages
+marginals$total_rmse <- apply(marginals[,c("rmse_01","rmse_12", "rmse_23")], 1, mean)
+marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean)
+
+# CREATE TABLE OF RMSE/AIC------------------------------------
+
+included <- data.frame(cov=c("CutiSTI","LSTpjuv","ONIpjuv","MLDpart","DDegg"),
+           Included = c("Yes"))
+
+gam_loo_table <- dplyr::arrange(marginals, total_rmse)%>%
+  dplyr::select(cov, total_rmse, total_aic)%>%
+  mutate(cv="LOO",model="GAM")%>%
+  left_join(included)
+gam_loo_table[is.na(gam_loo_table)] <-"No"
+cols<- c('#dd4124',"#edd746",'#7cae00','#0f85a0')
+
+marginal <- ggplot(gam_loo_table, aes(x = reorder(cov,total_rmse), y = total_rmse, fill=Included)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip the axes to make a horizontal bar graph
+  labs(y = "Marginal Improvement RMSE", x = "Predictor")+
+  scale_fill_manual(values=c('grey',cols[3]))+
+  theme_classic()
+marginal 
+
+rmse_ratio <- ggplot(results_arr_RMSE, aes(x = n_cov, y = rmse_ratio)) +
+  geom_point(position = "jitter",  alpha=0.4) +
+  geom_hline(yintercept=1, lty=2)+
+  labs(x = "Number of Predictors", y = expression("RMSE/RMSE"["null"]),col="Number of \n Predictors")+
+  #scale_colour_manual(values=cols)+
+  ylim(c(0.25,1))+
+  theme_classic()
+rmse_ratio
+
+
+png("Figures/Figure7.png",width=8,height=5,units="in",res=1200)
+ggarrange(rmse_ratio, marginal, labels = c("A.", "B."), widths = c(0.75,1))
+dev.off()
 #### Extracting LOO-CV Highest Ranked Model ####
 rankmod<-1 #which model rank do you want to look at?
-combos= c(results_arr_RMSE_LOO$var1[rankmod], results_arr_RMSE_LOO$var2[rankmod], results_arr_RMSE_LOO$var3[rankmod]) #this needs to be mod depending on which model and selection criteria you want
+combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod], results_arr_RMSE$var4[rankmod]) #this needs to be mod depending on which model and selection criteria you want
 
 smooth_terms <- paste("s(", combos, ", k = 3)", collapse = " + ") #pasting in model structure
 formula_str <- paste("Y_rec ~ ", smooth_terms) #formula for selected model
-years<-1996:2021
+years<-1998:2021
 gam_data<- full_dat%>%filter(year %in% years) 
 gam <- gam(as.formula(formula_str),data = gam_data)
 
 #### Predicting the last 5 years ####
 
-yearstrain<- 1996:2016
+yearstrain<- 1998:2016
 yearspredict<- 2017:2021
 
 train_data<- full_dat%>%filter(year %in% yearstrain) 
 gam_train <- gam(as.formula(formula_str),data = train_data)
 gam5 <- gam(as.formula(formula_str),data = train_data)
 predlast5<-predict.gam(gam5,newdata=full_dat%>%filter(year %in% yearspredict))
-gam2 <- gam(as.formula(formula_str),data = full_dat%>%filter(year %in% 1996:2019))
+gam2 <- gam(as.formula(formula_str),data = full_dat%>%filter(year %in% 1998:2019))
 predlast2<-predict.gam(gam2,newdata=full_dat%>%filter(year %in% 2020:2021))
+#gam.train<-data.frame(year=train_data$year,predict(gam_train,se=TRUE))
 
+gam3 <- gam(as.formula(formula_str),data = full_dat%>%filter(year %in% 1998:2021))
+gam.train<-data.frame(year=full_dat%>%filter(year %in% 1998:2021)%>%select(year),predict(gam3,se=TRUE))
 
 train_dat_pred <- full_dat%>%left_join(gam.train%>%select(year, fit, se.fit))%>%
   left_join(predicted%>%filter(ModelID==616)%>%select(year,pred))%>%
@@ -222,11 +330,11 @@ pred5<- data.frame()
 startval<-1
 j1<- 2017
 nyear <- 5
-jstart<- 23
+jstart<- 21
 jend=jstart+nyear
 
   for (j in jstart:jend) {
-    train_index <- 1996:2017  # All indices except the j-th
+    train_index <- 1998:2017  # All indices except the j-th
     test_index <- j                # The j-th index
     
     # Fit model on n-1 observations
@@ -242,7 +350,7 @@ train_dat_pred<-left_join(train_dat_pred,pred5)
 #### Plotting Highest Ranked Model ####
 # Fit a model that includes multiple variables from the top model
 sizept=1.75
-gam.plot<- ggplot(train_dat_pred%>%filter(year  %in% 1996:2021), aes(x=year)) +
+gam.plot<- ggplot(train_dat_pred%>%filter(year  %in% 1998:2021), aes(x=year)) +
   geom_line(data=train_dat_pred,aes(y=fit)) +
   geom_ribbon(data=train_dat_pred,aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
               alpha=0.2)+
@@ -264,6 +372,7 @@ gam.plot<- ggplot(train_dat_pred%>%filter(year  %in% 1996:2021), aes(x=year)) +
   theme_classic() +
   labs(x="Year", y="ln(Recruitment Deviations)")+
   ylim(c(-2,1.5))+
+  xlim(c(1998,2022))+
   #labs(fill = "Diagnostic", shape="Recruitment Deviation \n Type")+
   geom_hline(yintercept=0,lty=2)+
   theme(strip.text = element_text(size=6),
@@ -304,7 +413,7 @@ png("Figures/Figure4.png",width=9,height=4,units="in",res=1200)
 partial_effects 
 dev.off()
 
-tsdata<-pivot_longer(full_dat%>%select(-c(HCIpjuv, HCIlarv, HCI2larv, HCI2pjuv)),cols=-c(year,Datatreatment,type,sd,Y_rec),names_to = 'var',values_to = "val")%>%
+tsdata<-pivot_longer(full_dat,cols=-c(year,Datatreatment,type,sd,Y_rec),names_to = 'var',values_to = "val")%>%
   select(year, var, val,Y_rec)%>%
   mutate(type = ifelse(var=='CHLpjuv'|var=='PPpjuv'|var=="NCOPben"|var=="NCOPpjuv"|var=="SCOPben"|var=="SCOPpjuv", "Foodweb", "Oceanographic"))
 
@@ -345,7 +454,7 @@ dev.off()
 #### GAM diagnostics ####
 
 #checking for multicollinearity
-dfx = envir_data2%>%select(-c(HCIpjuv, HCIlarv, HCI2larv, HCI2pjuv)) 
+dfx = envir_data2#%>%select(-c(HCIpjuv, HCIlarv, HCI2larv, HCI2pjuv)) 
 dfx = na.omit(dfx) # na's mess up the cor function
 cor_xy = cor(dfx)
 
@@ -357,7 +466,7 @@ corrplot::corrplot(cor_xy, hod='circle', type='lower', tl.cex = 0.5)
 dev.off()
 
 m2<-gam
-diag_dat<-full_dat%>%filter(year %in% 1996:2021) 
+diag_dat<-full_dat%>%filter(year %in% 1998:2021) 
 diag_dat$cooks.distance <- cooks.distance(m2)
 diag_dat$leverage <-influence.gam(m2)
 diag_dat$residuals.standard <- scale(residuals.gam(m2))
@@ -413,12 +522,12 @@ for (j in jstart:n_year) {
   rsqjack<-rbind(rsqjack,rsq)
   }
 
-gam.jack<-cbind(gam_data,jack=predictions[1:26],r2=rsqjack[1:26,1])
+gam.jack<-cbind(gam_data,jack=predictions[1:24],r2=rsqjack[1:24,1])
 
 #### R2 comparison ####
 
 r2jack<-ggplot(gam.jack, aes(r2)) +
-  geom_histogram(bins=30,fill="lightgrey", col="black")+
+  geom_histogram(bins=40,fill="lightgrey", col="black")+
   xlim(c(0,0.8))+
   ylab("Frequency")+
   xlab("R-squared")+

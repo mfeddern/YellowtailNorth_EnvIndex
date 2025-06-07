@@ -47,6 +47,10 @@ dat = df %>%
 full_dat<-dat
 dat<-full_dat%>%  filter(year %in% data_years)
 
+mod <-lm(Y_rec~ONIpjuv, data=full_dat%>%filter(year>1993&year<2019))
+lm <- data.frame(predict(mod, full_dat%>%filter(year>=2019),se=TRUE,interval = "prediction"))%>%
+  mutate(sefitlwr=fit.fit-1.96*se.fit, sefitupr=fit.fit+1.96*se.fit)
+
 #### Evaluating Correlations between Covariates #####
 
 threshold <-0.3 #assiging a threshold of correlation to filter out 
@@ -141,7 +145,7 @@ for (i in seq_along(combinations)) { #loop over each covariate combination i
   gam_model_train <- gam(as.formula(formula_str),
                          #data = dat)
                          data = dat[which(dat$year %notin% unique(dat$year)[jstart:n_year]), ])
-  #fitting model from 1994 - 2018 (fill model fits)
+  #fitting model from 1994 - 2018 (full model fits)
    gam_model_full <- gam(as.formula(formula_str),
                         data = dat)
   #fitting model from 2013 - 2018 (prediction fits)
@@ -201,6 +205,7 @@ for (i in seq_along(combinations)) { #loop over each covariate combination i
   
   print(i)
 }
+
 results2<-results #just storing the results object in a different object 
 #results<-results2%>%filter(rsq_full>0&rsq_train>0&rsq_pred>0)
 results_arr_LFO5_rmse <- arrange(results,RMSE)%>% #ordered results by RMSE if you want to use this for selection
@@ -212,9 +217,7 @@ results_arr_LFO5_AIC <- arrange(results_arr_LFO5_rmse,AIC)%>%#ordered results by
   mutate(deltaAIC=AIC-min(AIC),deltaRMSE=RMSE-minRMSE)%>%
   mutate( percRMSE=deltaRMSE/minRMSE)
 results_arr_LFO5_devex <- arrange(results,desc(dev.ex_pred)) #ordered results by deviance explained
-results_arr_LFOO_devex <- arrange(results,desc(dev.ex_pred)) #ordered results by deviance explained
 arrange(results,RMSE) #ordered results by deviance explained
-
 # View the results data frame
 print(results_arr_LFO5_rmse) #checkin LFO results
 print(results_arr_LFO5_AIC) #checking AIC results
@@ -234,13 +237,10 @@ jstart<-1
 for (i in seq_along(combinations)) {
   # ps here represents a P-spline / penalized regression spline
   # k represent the number of parameters / knots estimating function at, should be small
-  
-  # smooth on total release isn't needed when we're not working with jack rate
-  #smooth_terms <- paste("s( total_release, k =3) + s(", covariates[[i]], ", k = 3)")
-  smooth_terms <- paste("s(", combinations[[i]], ", k = 3)", collapse = " + ")
-  formula_str <- paste("Y_rec ~ ", smooth_terms)
-  predictions <- numeric(nrow(dat))
-  n_year <- length(unique(dat$year))
+    smooth_terms <- paste("s(", combinations[[i]], ", k = 3)", collapse = " + ") #setting up equation for combinations
+  formula_str <- paste("Y_rec ~ ", smooth_terms) #setting up formula string
+  predictions <- numeric(nrow(dat)) #number of predicted years
+  n_year <- length(unique(dat$year)) #number of years
   # Loop over each observation
   for (j in jstart:n_year) {
     train_index <- setdiff(jstart:n_year, j)  # All indices except the j-th
@@ -248,8 +248,7 @@ for (i in seq_along(combinations)) {
     
     # Fit model on n-1 observations
     gam_model <- gam(as.formula(formula_str),
-                     # weights = number_cwt_estimated,
-                     data = dat[which(dat$year != unique(dat$year)[j]), ])
+                     data = dat[which(dat$year != unique(dat$year)[j]), ]) #fitting the model but excluding each year
     
     # Predict the excluded observation
     predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
@@ -326,6 +325,8 @@ formula_str <- paste("Y_rec ~ ", smooth_terms) #formula for selected model
 years<-1994:2019 #these are the training years
 
 ##### Generating pred error for the training period #####
+#prediction intervals are a nighmare for gams...here is a not so clean hack to calculate them and the 
+#associated prediction error
 train_data<- full_dat%>%filter(year %in% years) 
 gam <- gam(as.formula(formula_str),data = train_data)
 summary(gam)
