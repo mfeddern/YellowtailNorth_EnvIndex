@@ -381,7 +381,7 @@ gam.plot<- ggplot(train_dat_pred%>%filter(year  %in% 1998:2021), aes(x=year)) +
         plot.subtitle = element_text(hjust = 0.5))
 gam.plot
 
-png("Figures/Figure3.png",width=8,height=5,units="in",res=1200)
+png("Figures/Figure4.png",width=8,height=5,units="in",res=1200)
 gam.plot
 dev.off()
 
@@ -389,6 +389,7 @@ dev.off()
 
 #### Partial Effects Figures ####
 # Use smooth_estimates() to get the smooth estimates and confidence intervals
+gam <- gam(as.formula(formula_str),data = gam_data%>%filter(year<2019))
 smooth_data <- smooth_estimates(gam)%>%  # Or specify the smooth term you want to plot
   add_constant(model_constant(gam)) %>% # Add the intercept
   add_confint()%>% # Add the credible interval
@@ -409,7 +410,7 @@ partial_effects<-ggplot(smooth_data, aes(x = Value, y = .estimate)) +  # Setup t
   geom_text(data = observations%>%filter(year %in% years), aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
   theme_classic()
 partial_effects 
-png("Figures/Figure4.png",width=9,height=4,units="in",res=1200)
+png("Figures/Figure5.png",width=8,height=8,units="in",res=1200)
 partial_effects 
 dev.off()
 
