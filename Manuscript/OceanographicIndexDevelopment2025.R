@@ -188,6 +188,7 @@ results_arr_RMSE<- arrange(results,RMSE_loo)
 results_arr_AIC<- arrange(results,AIC)
 arrange(results,desc(rmse_imp))
 results_arr_AIC%>%filter(rmse_ratio<1)
+arrange(results,rmse_ratio)
 ### Calculating Relative Variable Importance ###
 
 # Create a baseline model with only the intercept
