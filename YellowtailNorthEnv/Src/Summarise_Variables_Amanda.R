@@ -10,7 +10,8 @@ chl_index <- readRDS('data-yellowtail/Raw_Environmental/chl_indices_WCBTS1996_20
   filter(month==4|month==5|month==6|month==7|month==8)%>%
   group_by(year)%>%
   dplyr::summarise(CHL=mean(chl))%>%
-  mutate(CHLpjuv=(CHL-mean(CHL))/sd(CHL))%>%
+  mutate(CHLpjuv=CHL)%>%
+ # mutate(CHLpjuv=(CHL-mean(CHL))/sd(CHL))%>%
   select(year, CHLpjuv)
 
 #chl_index <- readRDS('data-yellowtail/Raw_Environmental/chl_indices_WCBTS2025.rds')%>%
@@ -26,7 +27,8 @@ pp_index <- readRDS('data-yellowtail/Raw_Environmental/pp_indices_WCBTS1996_2023
   filter(month==4|month==5|month==6|month==7|month==8)%>%
   group_by(year)%>%
   dplyr::summarise(PP=mean(pp))%>%
-  mutate(PPpjuv=(PP-mean(PP))/sd(PP))%>%
+  mutate(PPpjuv=PP)%>%
+  #mutate(PPpjuv=(PP-mean(PP))/sd(PP))%>%
   select(year, PPpjuv)
 
 #pp_index <- readRDS('data-yellowtail/Raw_Environmental/pp_indices_WCBTS2025.rds')%>%
@@ -39,21 +41,22 @@ pp_index <- readRDS('data-yellowtail/Raw_Environmental/pp_indices_WCBTS1996_2023
 
 
 Beuti_STI<- read.csv('data-yellowtail/Raw_Environmental/beuti_sti.csv')%>%
-  select(X, X45N, X46N, X47N)%>%
-  pivot_longer(cols=-X,names_to='location', values_to='BeutiSTI')%>%
-  group_by(X)%>%
+  select(Year, X45, X46, X47)%>%
+  pivot_longer(cols=-Year,names_to='location', values_to='BeutiSTI')%>%
+  group_by(Year)%>%
   dplyr::summarise(BeutiSTI=mean(BeutiSTI))%>%
-  mutate(BeutiSTIpjuv=(BeutiSTI-mean(BeutiSTI))/sd(BeutiSTI))%>%
-  dplyr::rename(year=X)%>%
+#  mutate(BeutiSTIpjuv=(BeutiSTI-mean(BeutiSTI))/sd(BeutiSTI))%>%
+  mutate(BeutiSTIpjuv=BeutiSTI)%>%
+  dplyr::rename(year=Year)%>%
   select(year, BeutiSTIpjuv)
 
-
-BEUTI_TUMI<-read.csv('data-yellowtail/Raw_Environmental/BEUTI_tumi.csv')%>%
-  select(Year, 'X45', 'X46', 'X47')%>%
+BEUTI_TUMI<-read.csv('data-yellowtail/Raw_Environmental/beuti_tumi_Ellen.csv')%>%
+  select('X', 'X45N', 'X46N', 'X47N')%>%
+  mutate(Year=X)%>%
   pivot_longer(cols=-Year,names_to='location', values_to='BeutiTUMI')%>%
   group_by(Year)%>%
   dplyr::summarise(BeutiTUMI=mean(BeutiTUMI))%>%
-  mutate(BeutiTUMIpjuv=(BeutiTUMI-mean(BeutiTUMI))/sd(BeutiTUMI))%>%
+  mutate(BeutiTUMIpjuv=BeutiTUMI)%>%
   select(Year, BeutiTUMIpjuv)%>%
   mutate(year=Year)
 
@@ -62,7 +65,7 @@ BEUTI_STI<-read.csv('data-yellowtail/Raw_Environmental/BEUTI_sti.csv')%>%
   pivot_longer(cols=-Year,names_to='location', values_to='BeutiSTI')%>%
   group_by(Year)%>%
   dplyr::summarise(BeutiSTI=mean(BeutiSTI))%>%
-  mutate(BeutiSTIpjuv=(BeutiSTI-mean(BeutiSTI))/sd(BeutiSTI))%>%
+  mutate(BeutiSTIpjuv=BeutiSTI)%>%
   select(Year, BeutiSTIpjuv)%>%
   mutate(year=Year)
 
@@ -71,17 +74,17 @@ CUTI_STI<- read.csv('data-yellowtail/Raw_Environmental/cuti_sti.csv')%>%
   pivot_longer(cols=-X,names_to='location', values_to='CutiSTI')%>%
   group_by(X)%>%
   dplyr::summarise(CutiSTI=mean(CutiSTI))%>%
-  mutate(CutiSTIpjuv=(CutiSTI-mean(CutiSTI))/sd(CutiSTI))%>%
+  mutate(CutiSTIpjuv=CutiSTI)%>%
   dplyr::rename(year=X)%>%
   select(year, CutiSTIpjuv)
 
 
-CUTI_TUMI<-read.csv('data-yellowtail/Raw_Environmental/cuti_tumi.csv')%>%
-  select(X, X45, X46, X47)%>%
+CUTI_TUMI<-read.csv('data-yellowtail/Raw_Environmental/cuti_tumi_Ellen.csv')%>%
+  select(X, X45N, X46N, X47N)%>%
   pivot_longer(cols=-X,names_to='location', values_to='CutiTUMI')%>%
   group_by(X)%>%
   dplyr::summarise(CutiTUMI=mean(CutiTUMI))%>%
-  mutate(CutiTUMIpjuv=(CutiTUMI-mean(CutiTUMI))/sd(CutiTUMI))%>%
+  mutate(CutiTUMIpjuv=CutiTUMI)%>%
   dplyr:: rename(year=X)%>%
   select(year, CutiTUMIpjuv)
 
@@ -90,14 +93,14 @@ bakun_sti<- read.csv('data-yellowtail/Raw_Environmental/bakun_sti.csv')%>%
   filter(lat==45)%>%
   #pivot_wider(names_from = lat,values_from = bakun_sti)%>%
   group_by(year)%>%
-  dplyr::summarise(bakun_sti=mean(bakun_sti))%>%
+  dplyr::summarise(bakun_sti=bakun_sti)%>%
   mutate(bakun_sti=scale(bakun_sti))
 
 Env_Indices<-join_all(list(CUTI_STI, CUTI_TUMI,BEUTI_TUMI, BEUTI_STI,chl_index,pp_index,bakun_sti), by = 'year')
 
 #write.csv(Env_Indices, "data-yellowtail/Processed_Environmental/2024updateGLORYs.csv")
 
-write.csv(Env_Indices, "data-yellowtail/Processed_Environmental/2024update_Env_Indices.csv")
+write.csv(Env_Indices, "data-yellowtail/Processed_Environmental/2024update_Env_IndicesUNSTANDARDIZED.csv")
 
 glorys<-read.csv('data-yellowtail/Processed_Environmental/glorys-data-annual-yellowtail_subset.csv')
 glorys_full<-glorys%>%

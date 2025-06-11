@@ -47,7 +47,7 @@ dat<-full_dat%>%  filter(year %in% data_years)
 
 #### Evaluating Correlations between Covariates #####
 
-threshold <-0.3 #assiging a threshold of correlation to filter out 
+threshold <- 0.3 #0.95#0.3 #assiging a threshold of correlation to filter out 
 envir_data2 <- envir_data2[complete.cases(envir_data2), ] %>% 
   dplyr::select(!any_of( c('year'))) # getting environmental data
 M = data.frame(cor(envir_data2)) # generating a correlation matrix
@@ -254,22 +254,22 @@ for(i in 1:length(covariates)) {
 }
 
 # Calculate avergages of averages
-marginals$total_rmse <- apply(marginals[,c("rmse_01","rmse_12", "rmse_23")], 1, mean)
-marginals$total_aic <- apply(marginals[,c("aic_01","aic_12", "aic_23")], 1, mean)
+marginals$total_rmse <- apply(marginals[,c("rmse_23")], 1, mean)
+marginals$total_aic <- apply(marginals[,c("aic_12", "aic_23")], 1, mean)
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
 included <- data.frame(cov=c("CutiSTI","LSTpjuv","ONIpjuv","MLDpart","DDegg"),
            Included = c("Yes"))
 
-gam_loo_table <- dplyr::arrange(marginals, total_rmse)%>%
-  dplyr::select(cov, total_rmse, total_aic)%>%
+gam_loo_table <- dplyr::arrange(marginals, rmse_23)%>%
+  dplyr::select(cov, rmse_23, total_aic)%>%
   mutate(cv="LOO",model="GAM")%>%
   left_join(included)
 gam_loo_table[is.na(gam_loo_table)] <-"No"
 cols<- c('#dd4124',"#edd746",'#7cae00','#0f85a0')
 
-marginal <- ggplot(gam_loo_table, aes(x = reorder(cov,total_rmse), y = total_rmse, fill=Included)) +
+marginal <- ggplot(gam_loo_table, aes(x = reorder(cov,rmse_23), y = rmse_23, fill=Included)) +
   geom_bar(stat = "identity") +
   coord_flip() +  # Flip the axes to make a horizontal bar graph
   labs(y = "Marginal Improvement RMSE", x = "Predictor")+
@@ -290,9 +290,15 @@ rmse_ratio
 png("Figures/Figure7.png",width=8,height=5,units="in",res=1200)
 ggarrange(rmse_ratio, marginal, labels = c("A.", "B."), widths = c(0.75,1))
 dev.off()
+
+#png("Figures/Figure7vfull2_3.png",width=5,height=5,units="in",res=1200)
+#ggarrange(rmse_ratio, marginal, labels = c("A.", "B."), widths = c(0.75,1))
+#marginal
+#dev.off()
 #### Extracting LOO-CV Highest Ranked Model ####
-rankmod<-1 #which model rank do you want to look at?
-combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod], results_arr_RMSE$var4[rankmod]) #this needs to be mod depending on which model and selection criteria you want
+rankmod<-5 #which model rank do you want to look at?
+#combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod], results_arr_RMSE$var4[rankmod]) #this needs to be mod depending on which model and selection criteria you want
+combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod]) #this needs to be mod depending on which model and selection criteria you want
 
 smooth_terms <- paste("s(", combos, ", k = 3)", collapse = " + ") #pasting in model structure
 formula_str <- paste("Y_rec ~ ", smooth_terms) #formula for selected model
@@ -461,10 +467,12 @@ dfx = na.omit(dfx) # na's mess up the cor function
 cor_xy = cor(dfx)
 
 graphics.off()
-png( paste0("Figures/FigureA1.png"),
+png( paste0("Figures/FigureA1vb.png"),
      units = 'in', res=300, width = 5, height=5)
 # plot command
-corrplot::corrplot(cor_xy, hod='circle', type='lower', tl.cex = 0.5)
+corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.3, tl.cex = 0.5)
+
+#corrplot::corrplot(cor_xy,  type='lower', tl.cex = 0.5)
 dev.off()
 
 m2<-gam
@@ -591,7 +599,27 @@ png("Figures/A2.png",width=10,height=8,units="in",res=1200)
 full_rec
 dev.off()
 
+library(DHARMa)
+gam <- gam(Y_rec ~ s(CutiSTI, k = 3) + s(LSTpjuv, k = 3) + s(ONIpjuv, k = 3)+ s(DDegg, k = 1),data = gam_data)
 
+simulationOutput <- simulateResiduals(fittedModel = gam)
+
+testDispersion(simulationOutput)
+simulationOutput$scaledResiduals
+
+
+png("Figures/Diag1.png",width=10,height=8,units="in",res=1200)
+plot(simulationOutput)
+dev.off()
+
+png("Figures/Diag2.png",width=10,height=8,units="in",res=1200)
+testDispersion(simulationOutput)
+dev.off()
+
+plotResiduals(simulationOutput$scaledResiduals, gam_data$CutiSTI)
+plotResiduals(simulationOutput$scaledResiduals, gam_data$ONIpjuv)
+plotResiduals(simulationOutput$scaledResiduals, gam_data$LSTpjuv)
+plotResiduals(simulationOutput$scaledResiduals, gam_data$DDegg)
 ##### Generating pred error for the training period #####
 yearmin<- 2019
 yearmax<-2021
@@ -621,3 +649,59 @@ train_dat_pred <- full_dat%>%left_join(gam.train%>%select(year, fit, se.fit))%>%
                        last5 = predict.gam(gam5,newdata=train_dat_pred%>%filter(year>=yearmin&year<=yearmax)))
   )%>%
   mutate(type2=ifelse(type=="Main_RecrDev","Main", "Late"))
+
+
+### Unstandardized time series ####
+
+df<-data.frame(read.csv("data-yellowtail/2024Env-annual-yellowtail_UNSTANDARDIZED.csv"))
+colnames(df)
+envir_data = df %>% 
+  rename(ONIlarv=oni_larv,ONIpjuv=oni_pjuv,ONIpre=oni_pre,
+         PDOlarv=pdo_larv,PDOpjuv=pdo_pjuv,
+         LUSI=lusi_annual,
+         BeutiTUMI=BeutiTUMIpjuv, BeutiSTI=BeutiSTIpjuv,
+         CutiSTI=CutiSTIpjuv,CutiTUMI=CutiTUMIpjuv, 
+         BakunSTI=bakun_sti,
+         HCIlarv=hci1_larv,HCIpjuv=hci1_pjuv,
+         HCI2larv=hci2_larv,HCI2pjuv=hci2_pjuv,
+         NCOPpjuv=ZOOpjuvN, NCOPben=ZOObenN,
+         SCOPpjuv=ZOOpjuvS, SCOPben=ZOObenS)
+to_omit<-c('X',"Year","Year.1","LUSI", "BakunSTI", "HCI2larv", "HCI2pjuv", "HCIlarv", "HCIpjuv")
+envir_data2 =envir_data%>%dplyr::select(!any_of(to_omit))
+
+tsdata<-pivot_longer(envir_data2,cols=-c(year),names_to = 'var',values_to = "val")%>%
+  #select(year, var, val,Y_rec)%>%
+  mutate(type = ifelse(var=='CHLpjuv'|var=='PPpjuv'|var=="NCOPben"|var=="NCOPpjuv"|var=="SCOPben"|var=="SCOPpjuv", "Foodweb", "Oceanographic"))
+
+ts_foodweb <- ggplot(tsdata%>%filter(type=="Foodweb"),aes(x=year,y=val))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~var, ncol=6,scales="free_y")+
+  ylab("")+
+  xlab("")+
+  ggtitle("Foodweb Conditions")+
+  #geom_hline(yintercept = 0,lty=2)+
+  theme_classic()+
+  theme(plot.title = element_text(hjust=0.5))
+
+
+ts_ocean <-ggplot(tsdata%>%filter(type=="Oceanographic"),aes(x=year,y=val))+
+  geom_line()+
+  geom_point()+
+  facet_wrap(~var, ncol=6,scales="free_y")+
+  ylab("")+
+  xlab("")+
+  ggtitle("Oceanographic Conditions")+
+ # geom_hline(yintercept = 0,lty=2)+
+  theme_classic()+
+  theme(plot.title = element_text(hjust=0.5))
+arranged_ts<-ggarrange(ts_foodweb,ts_ocean, ncol = 1, heights=c(1.5,4.25))
+
+full_ts<-annotate_figure(arranged_ts,
+                         bottom = text_grob("Year"),
+                         left = text_grob("Unstandardized Time Series", rot=90)
+)
+
+png("Figures/FigureS4.png",width=10,height=8,units="in",res=1200)
+full_ts
+dev.off()
