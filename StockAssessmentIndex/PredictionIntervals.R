@@ -1,3 +1,26 @@
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+library(corrplot)
+library(mgcv)
+library(DHARMa)
+library(mgcViz)
+library(gridExtra)
+library(ROCR)
+library(recdata)
+library(predRecruit)
+library(dplyr)
+library(mgcv)
+library(gratia)
+library(tidyverse)
+library(corrplot)
+library(car)
+library(gratia)
+library(ggpubr)
+
+#method 1
+
+
 mod<-gam
 Vb <- vcov(mod)
 pred2 <- predict(mod, se.fit = TRUE)

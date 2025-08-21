@@ -15,7 +15,6 @@ library(gratia)
 library(tidyverse)
 library(corrplot)
 library(car)
-library(gratia)
 library(ggpubr)
 
 ##### Reading in the data #####
@@ -35,7 +34,7 @@ envir_data = df %>%
 to_omit<-c('X',"Year","Year.1","LUSI", "BakunSTI", "HCI2larv", "HCI2pjuv", "HCIlarv", "HCIpjuv")
 envir_data2 =envir_data%>%dplyr::select(!any_of(to_omit))
 recruitmentdevs<- data.frame(read.csv("data-yellowtail/RecruitmentDeviations2025draft.csv"))%>%
-  filter(Datatreatment=="Expanded PacFIN")
+  filter(Datatreatment=="2025 No_SMURF")
 df = envir_data2%>%left_join(recruitmentdevs)
 data_years = 1998:2021 ## timeframe over which to stabilize environmental date
 colnames(df)
@@ -186,10 +185,8 @@ results <- arrange(results,AIC)%>%
   mutate(deltaAIC=AIC-min(AIC))
 results_arr_RMSE<- arrange(results,RMSE_loo)
 results_arr_AIC<- arrange(results,AIC)
-arrange(results,desc(rmse_imp))
-results_arr_AIC%>%filter(rmse_ratio<1)
-arrange(results,rmse_ratio)
-arrange(results,desc(rsq_full))
+summary_results<-data.frame(results_arr_AIC%>%filter(deltaAIC<2))
+write.csv(summary_results, "Figures/No_SMURF_Sensitivity/TopModels.csv")
 ### Calculating Relative Variable Importance ###
 
 # Create a baseline model with only the intercept
@@ -255,16 +252,18 @@ for(i in 1:length(covariates)) {
 }
 
 # Calculate avergages of averages
-marginals$total_rmse <- apply(marginals[,c("rmse_23")], 1, mean)
+marginals$total_rmse <- marginals[,c("rmse_23")]#apply(marginals[,c("rmse_23")], 1, mean)
 marginals$total_aic <- apply(marginals[,c("aic_12", "aic_23")], 1, mean)
 
 # CREATE TABLE OF RMSE/AIC------------------------------------
 
-included <- data.frame(cov=c("CutiSTI","LSTpjuv","ONIpjuv","MLDpart","DDegg"),
+included <- data.frame(cov=c("CutiSTI","LSTpjuv","ONIpjuv","MLDpart","DDegg","PPpjuv","Tcop"),
            Included = c("Yes"))
+included <- data.frame(cov=c("CutiSTI","LSTpjuv","ONIpjuv"),
+                       Included = c("Yes"))
 
 gam_loo_table <- dplyr::arrange(marginals, rmse_23)%>%
-  dplyr::select(cov, rmse_23, total_aic)%>%
+  dplyr::select(cov, rmse_23)%>%
   mutate(cv="LOO",model="GAM")%>%
   left_join(included)
 gam_loo_table[is.na(gam_loo_table)] <-"No"
@@ -288,8 +287,14 @@ rmse_ratio <- ggplot(results_arr_RMSE, aes(x = n_cov, y = rmse_ratio)) +
 rmse_ratio
 
 
-png("Figures/Figure7.png",width=8,height=5,units="in",res=1200)
-ggarrange(rmse_ratio, marginal, labels = c("A.", "B."), widths = c(0.75,1))
+png("Figures/No_SMURF_Sensitivity/Figure7.png",width=5.5,height=5,units="in",res=1200)
+marginal
+dev.off()
+
+pdf(file = "Figures/Figure7.pdf",   # The directory you want to save the file in
+    width = 5.5, # The width of the plot in inches
+    height = 5)
+marginal
 dev.off()
 
 #png("Figures/Figure7vfull2_3.png",width=5,height=5,units="in",res=1200)
@@ -297,16 +302,16 @@ dev.off()
 #marginal
 #dev.off()
 #### Extracting LOO-CV Highest Ranked Model ####
-rankmod<-5 #which model rank do you want to look at?
-#combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod], results_arr_RMSE$var4[rankmod]) #this needs to be mod depending on which model and selection criteria you want
+rankmod<-1 #which model rank do you want to look at?
 combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod]) #this needs to be mod depending on which model and selection criteria you want
+#combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod], results_arr_RMSE$var4[rankmod]) #this needs to be mod depending on which model and selection criteria you want
 
 smooth_terms <- paste("s(", combos, ", k = 3)", collapse = " + ") #pasting in model structure
 formula_str <- paste("Y_rec ~ ", smooth_terms) #formula for selected model
 years<-1998:2021
 gam_data<- full_dat%>%filter(year %in% years) 
 gam <- gam(as.formula(formula_str),data = gam_data)
-
+summary(gam)
 #### Predicting the last 5 years ####
 
 yearstrain<- 1998:2016
@@ -338,11 +343,11 @@ pred5<- data.frame()
 startval<-1
 j1<- 2017
 nyear <- 5
-jstart<- 21
-jend=jstart+nyear
+jstart<- 20
+jend=jstart+nyear-1
 
   for (j in jstart:jend) {
-    train_index <- 1998:2017  # All indices except the j-th
+    train_index <- 1998:2016  # All indices except the j-th
     test_index <- j                # The j-th index
     
     # Fit model on n-1 observations
@@ -355,6 +360,7 @@ jend=jstart+nyear
   }
 colnames(pred5)<-c("pred5", "year")
 train_dat_pred<-left_join(train_dat_pred,pred5)
+
 #### Plotting Highest Ranked Model ####
 # Fit a model that includes multiple variables from the top model
 sizept=1.75
@@ -389,15 +395,72 @@ gam.plot<- ggplot(train_dat_pred%>%filter(year  %in% 1998:2021), aes(x=year)) +
         plot.subtitle = element_text(hjust = 0.5))
 gam.plot
 
-png("Figures/Figure4.png",width=8,height=5,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/Figure4_Single.png",width=8,height=5,units="in",res=1200)
 gam.plot
 dev.off()
 
+pdf("Figures/Figure4_Single.pdf",width=8,height=5)
+gam.plot
+dev.off()
+
+sizept<-2.5
+
+rec_panela<-ggplot(train_dat_pred%>%filter(year  %in% 1998:2021), aes(x=year)) +
+  geom_line(data=train_dat_pred,aes(y=fit)) +
+  geom_ribbon(data=train_dat_pred,aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  geom_point(aes(y=Y_rec),size=sizept) +
+  geom_errorbar(aes(ymin=Y_rec-sd,ymax=Y_rec+sd),width = 0)+
+  theme_classic() +
+  labs(x="", y="")+
+  ylim(c(-1.5,1.5))+
+  xlim(c(1998,2022))
+
+rec_panelc<-ggplot(train_dat_pred%>%filter(year  %in% 1998:2022), aes(x=year)) +
+  geom_line(data=train_dat_pred,aes(y=fit)) +
+  geom_ribbon(data=train_dat_pred,aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  geom_point(data=train_dat_pred,aes(y=last5),pch=21,fill='#dd4124',size=sizept) +
+  theme_classic() +
+  labs(x="", y="")+
+ # ylim(c(-1.5,1.5))+
+  xlim(c(1998,2022)) 
+
+
+rec_paneld<-ggplot(train_dat_pred%>%filter(year  %in% 1998:2023), aes(x=year)) +
+  geom_line(data=train_dat_pred,aes(y=fit)) +
+  geom_ribbon(data=train_dat_pred,aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  geom_point(data=train_dat_pred,aes(y=pred5), pch=21,fill="#edd746",size=sizept) +
+  theme_classic() +
+  labs(x="", y="")+
+  ylim(c(-1.5,1.5))+
+  xlim(c(1998,2023)) 
+
+rec_panelb<-ggplot(train_dat_pred%>%filter(year  %in% 1998:2023), aes(x=year)) +
+  geom_line(data=train_dat_pred,aes(y=fit)) +
+  geom_ribbon(data=train_dat_pred,aes(x=year,y=fit,ymax=fit+2.1*se.fit, ymin=fit-2.1*se.fit), 
+              alpha=0.2)+
+  geom_point(data=train_dat_pred,aes(y=pred), pch=21,fill='#0f85a0',size=sizept) +
+  theme_classic() +
+  labs(x="", y="")+
+  ylim(c(-1.5,1.5))+
+  xlim(c(1998,2023)) 
+  
+multi<-ggarrange(rec_panela,rec_panelb,rec_panelc,rec_paneld,labels = c("A.", "B.", "C.","D."))
+
+png("Figures/No_SMURF_Sensitivity/Figure4_multi.png",width=8,height=7,units="in",res=1200)
+annotate_figure(multi,left="ln(recruitment devaitions)", bottom="Year")
+dev.off()
+
+pdf("Figures/Figure4_multi.pdf",width=8,height=7)
+annotate_figure(multi,left="ln(recruitment devaitions)", bottom="Year")
+dev.off()
 
 
 #### Partial Effects Figures ####
 # Use smooth_estimates() to get the smooth estimates and confidence intervals
-gam <- gam(as.formula(formula_str),data = gam_data%>%filter(year<2019))
+gam <- gam(as.formula(formula_str),data = gam_data%>%filter(year<2023))
 smooth_data <- smooth_estimates(gam)%>%  # Or specify the smooth term you want to plot
   add_constant(model_constant(gam)) %>% # Add the intercept
   add_confint()%>% # Add the credible interval
@@ -409,16 +472,26 @@ observations<-full_dat%>%
 smooth_data <- na.omit(smooth_data )
 
 partial_effects<-ggplot(smooth_data, aes(x = Value, y = .estimate)) +  # Setup the plot with the fitted values
-  facet_wrap(~Smooth)+
+  facet_wrap(~Smooth,ncol=1)+
   geom_line() + # Add estimated smooth
   xlim(c(-2,3))+
   geom_ribbon(aes(ymax = .upper_ci, ymin = .lower_ci), fill = "black", alpha = 0.2) + # Add credible interval
-  geom_point(data = observations%>%filter(year %in% years), aes(x = Value, y = Y_rec), color = "black") + # Add your data points
+  geom_point(data = observations%>%filter(year %in% years), aes(x = Value, y = Y_rec, col=year)) + # Add your data points
   labs(x = "Standardized Ecological Conditions", y = "Partial Residual")+ # Add labels
-  geom_text(data = observations%>%filter(year %in% years), aes(x = Value, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
+  geom_text(data = observations%>%filter(year %in% years), aes(x = Value,col=year, y = Y_rec,label=year),hjust=0,nudge_x = 0.1)+
+  scale_color_gradient(low="#0f85a0", high="#dd4124" )+
   theme_classic()
 partial_effects 
-png("Figures/Figure5.png",width=8,height=8,units="in",res=1200)
+
+#pdf("Figures/Figure6.pdf",width=6,height=8)
+#partial_effects 
+#dev.off()
+
+png("Figures/No_SMURF_Sensitivity/FigureS3.png",width=6,height=8,units="in",res=1200)
+partial_effects 
+dev.off()
+
+pdf("Figures/FigureS3.pdf",width=6,height=8)
 partial_effects 
 dev.off()
 
@@ -427,8 +500,8 @@ tsdata<-pivot_longer(full_dat,cols=-c(year,Datatreatment,type,sd,Y_rec),names_to
   mutate(type = ifelse(var=='CHLpjuv'|var=='PPpjuv'|var=="NCOPben"|var=="NCOPpjuv"|var=="SCOPben"|var=="SCOPpjuv", "Foodweb", "Oceanographic"))
 
 ts_foodweb <- ggplot(tsdata%>%filter(type=="Foodweb"),aes(x=year,y=val))+
-  geom_line()+
-  geom_point()+
+  geom_line(lwd=0.9, col="#7cae00" )+
+ # geom_point()+
   facet_wrap(~var, ncol=6)+
   ylab("")+
   xlab("")+
@@ -439,8 +512,8 @@ ts_foodweb <- ggplot(tsdata%>%filter(type=="Foodweb"),aes(x=year,y=val))+
 
 
 ts_ocean <-ggplot(tsdata%>%filter(type=="Oceanographic"),aes(x=year,y=val))+
-  geom_line()+
-  geom_point()+
+  geom_line(lwd=1, col ="#0f85a0" )+
+  #geom_point()+
   facet_wrap(~var, ncol=6)+
   ylab("")+
   xlab("")+
@@ -455,7 +528,11 @@ full_ts<-annotate_figure(arranged_ts,
                 left = text_grob("Standardized Index", rot=90)
 )
 
-png("Figures/Figure2.png",width=10,height=8,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/Figure2.png",width=10,height=8,units="in",res=1200)
+full_ts
+dev.off()
+
+pdf(file ="Figures/Figure3.pdf",width=10,height=8)
 full_ts
 dev.off()
 
@@ -468,16 +545,25 @@ dfx = na.omit(dfx) # na's mess up the cor function
 cor_xy = cor(dfx)
 
 graphics.off()
-png( paste0("Figures/FigureA1vb.png"),
+png( paste0("Figures/No_SMURF_Sensitivity/FigureA1vb.png"),
      units = 'in', res=300, width = 5, height=5)
 # plot command
-corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.3, tl.cex = 0.5)
+#corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.3, tl.cex = 0.5)
 
-#corrplot::corrplot(cor_xy,  type='lower', tl.cex = 0.5)
+corrplot::corrplot.mixed(cor_xy,method='ellipse',  type='lower', tl.cex = 0.5)#%>% corrRect(namesMat = r)
+
+dev.off()
+
+pdf( paste0("Figures/Figure4.pdf"),
+    width = 5, height=5)
+# plot command
+#corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.3, tl.cex = 0.5)
+
+corrplot::corrplot(cor_xy,method='ellipse',  type='lower', tl.cex = 0.5)
 dev.off()
 
 m2<-gam
-diag_dat<-full_dat%>%filter(year %in% 1998:2021) 
+diag_dat<-full_dat%>%filter(year %in% 1998:2020) 
 diag_dat$cooks.distance <- cooks.distance(m2)
 diag_dat$leverage <-influence.gam(m2)
 diag_dat$residuals.standard <- scale(residuals.gam(m2))
@@ -505,7 +591,7 @@ cooks<-ggplot(diag_dat, aes(x = cooks.distance, y = residuals.standard)) +
   geom_text(aes(label=year),cex=3, hjust=1.1)
 
 cooks
-png("Figures/CooksRMSE.png",width=5,height=5,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/CooksRMSE.png",width=5,height=5,units="in",res=1200)
 cooks
 dev.off()
 
@@ -515,7 +601,7 @@ results_loo <- data.frame()
 jstart<-1
 
 predictions <- numeric(nrow(dat))
-rsqjack <- data.frame()
+dev.expjack <- data.frame()
 n_year <- length(unique(dat$year))
 
 # LOO cv
@@ -529,38 +615,38 @@ for (j in jstart:n_year) {
                    data = dat[which(dat$year != unique(dat$year)[j]), ])
   # Predict the excluded observation
   predictions[which(dat$year == unique(dat$year)[j])] <- predict(gam_model, newdata = dat[which(dat$year == unique(dat$year)[j]), ])
-  rsq<-summary(gam_model)$r.sq
-  rsqjack<-rbind(rsqjack,rsq)
+  dev.exp<-summary(gam_model)$dev.exp
+  dev.expjack<-rbind(dev.expjack,dev.exp)
   }
 
-gam.jack<-cbind(gam_data,jack=predictions[1:24],r2=rsqjack[1:24,1])
+gam.jack<-cbind(gam_data,jack=predictions[1:24],dev.exp=dev.expjack[1:24,1])
 
 #### R2 comparison ####
 
-r2jack<-ggplot(gam.jack, aes(r2)) +
+dev.expjack<-ggplot(gam.jack, aes(dev.exp)) +
   geom_histogram(bins=40,fill="lightgrey", col="black")+
-  xlim(c(0,0.8))+
+  xlim(c(0.4,0.8))+
   ylab("Frequency")+
-  xlab("R-squared")+
+  xlab("Deviance Explained")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-r2jack2<-ggplot(gam.jack, aes(x=year, y=r2)) +
+dev.expjack
+dev.expjack2<-ggplot(gam.jack, aes(x=year, y=dev.exp)) +
   geom_point(col="black")+
  # xlim(c(0.4,0.8))+
   ylim(c(0,1))+
-  ylab("R-squared")+
-  geom_hline(yintercept=mean(na.omit(gam.jack$r2)),lty=2)+#0.59
+  ylab("Deviance Explained")+
+  geom_hline(yintercept=mean(na.omit(gam.jack$dev.exp)),lty=2)+#0.59
   xlab("Year (removed)")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-png("Figures/Figure5.png",width=4,height=6,units="in",res=1200)
-ggarrange(r2jack,r2jack2, ncol=1)
+dev.expjack2
+png("Figures/No_SMURF_Sensitivity/FigureA.png",width=4,height=6,units="in",res=1200)
+ggarrange(dev.expjack,dev.expjack2, ncol=1)
 dev.off()
 
 
-png("Figures/A3?.png",width=6,height=6,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/A3?.png",width=6,height=6,units="in",res=1200)
 par(mfrow=c(2,2))
 gam.check(gam,pch=19,cex=.3)
 dev.off()
@@ -596,12 +682,12 @@ full_rec<-annotate_figure(arranged_rec,
                          left = text_grob("Recruitment Deviations", rot=90)
 )
 full_rec
-png("Figures/A2.png",width=10,height=8,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/A2.png",width=10,height=8,units="in",res=1200)
 full_rec
 dev.off()
 
 library(DHARMa)
-gam <- gam(Y_rec ~ s(CutiSTI, k = 3) + s(LSTpjuv, k = 3) + s(ONIpjuv, k = 3)+ s(DDegg, k = 1),data = gam_data)
+gam <- gam(Y_rec ~ s(CutiSTI, k = 3) + s(LSTpjuv, k = 3) + s(ONIpjuv, k = 3),data = gam_data)
 
 simulationOutput <- simulateResiduals(fittedModel = gam)
 
@@ -609,11 +695,11 @@ testDispersion(simulationOutput)
 simulationOutput$scaledResiduals
 
 
-png("Figures/Diag1.png",width=10,height=8,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/Diag1.png",width=10,height=8,units="in",res=1200)
 plot(simulationOutput)
 dev.off()
 
-png("Figures/Diag2.png",width=10,height=8,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/Diag2.png",width=10,height=8,units="in",res=1200)
 testDispersion(simulationOutput)
 dev.off()
 
@@ -676,7 +762,7 @@ tsdata<-pivot_longer(envir_data2,cols=-c(year),names_to = 'var',values_to = "val
 
 ts_foodweb <- ggplot(tsdata%>%filter(type=="Foodweb"),aes(x=year,y=val))+
   geom_line()+
-  geom_point()+
+ # geom_point()+
   facet_wrap(~var, ncol=6,scales="free_y")+
   ylab("")+
   xlab("")+
@@ -688,7 +774,7 @@ ts_foodweb <- ggplot(tsdata%>%filter(type=="Foodweb"),aes(x=year,y=val))+
 
 ts_ocean <-ggplot(tsdata%>%filter(type=="Oceanographic"),aes(x=year,y=val))+
   geom_line()+
-  geom_point()+
+#  geom_point()+
   facet_wrap(~var, ncol=6,scales="free_y")+
   ylab("")+
   xlab("")+
@@ -703,6 +789,6 @@ full_ts<-annotate_figure(arranged_ts,
                          left = text_grob("Unstandardized Time Series", rot=90)
 )
 
-png("Figures/FigureS4.png",width=10,height=8,units="in",res=1200)
+png("Figures/No_SMURF_Sensitivity/FigureS4.png",width=10,height=8,units="in",res=1200)
 full_ts
 dev.off()

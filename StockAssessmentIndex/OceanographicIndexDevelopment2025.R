@@ -363,19 +363,40 @@ pred_dat_pred <- gam.predict%>%mutate(uprP = fit + (crit2 * se.fit),
                                      lwrP = fit - (crit2 * se.fit),
                                      uprCI = fit + (1.96 * se.fit),
                                      lwrCI = fit - (1.96 * se.fit))%>%
-  mutate(se.p=(uprP-fit)/1.96)
+  mutate(se.p=(uprP-fit)/crit2)
 gam_pred<-train_dat_pred%>%bind_rows(pred_dat_pred)
 rownames(gam_pred) <- NULL
 
+### prediction interval V2s1 = summary(m1)
+
+# residualerror <- 1.032 #residual error from Nick's model output from "Best-fit-summary" file
+
+S<-sqrt(summary(gam)$dispersion)
+sigma(gam)
+
+IndexV2<-gam_pred%>%
+  # adding in the standard deviation of the residual error to the SE
+  mutate(prediction_errorV2 = sqrt(S^2+se.fit^2))
+
+# select columns
+IndexV3<-IndexV2%>%select(year, fit, pred_int_lwr, pred_int_upr, se, Y_rec, prediction_error)
 
 write.csv(gam_pred, "OceanographicIndexFullV2.csv")
 readr::write_rds(gam_pred, "OceanographicIndexFullV2.rds")
 
-index<-gam_pred%>%select(year, type,fit,se.fit,residuals,uprP, lwrP,uprCI,lwrCI,se.p)
+index<-IndexV2%>%select(year, type,fit,se.fit,residuals,uprP, lwrP,uprCI,lwrCI,se.p,prediction_errorV2)
 
-write.csv(index, "OceanographicIndexV2.csv")
-readr::write_rds(index, "OceanographicIndexV2.rds")
+write.csv(index, "OceanographicIndexV4.csv")
+readr::write_rds(index, "OceanographicIndexV4.rds")
 
+ggplot(IndexV2) +
+  geom_ribbon(aes(x = year, ymin = lwrP, ymax = uprP),
+              alpha = 0.2, fill = "red") +
+  geom_ribbon(aes(x = year, ymin = lwrCI, ymax = uprCI),
+              alpha = 0.2, fill = "red") +
+  geom_ribbon(aes(x = year, ymin = lwrCI, ymax = uprCI),
+              alpha = 0.2, fill = "red") +
+  geom_line(aes(x = year, y = fit)) 
 
 #### Extracting LFO-CV Highest Ranked Model ####
 rankmod<-1 #which model rank do you want to look at?
