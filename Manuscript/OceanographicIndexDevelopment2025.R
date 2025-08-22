@@ -301,6 +301,7 @@ dev.off()
 #ggarrange(rmse_ratio, marginal, labels = c("A.", "B."), widths = c(0.75,1))
 #marginal
 #dev.off()
+
 #### Extracting LOO-CV Highest Ranked Model ####
 rankmod<-1 #which model rank do you want to look at?
 combos= c(results_arr_RMSE$var1[rankmod], results_arr_RMSE$var2[rankmod], results_arr_RMSE$var3[rankmod]) #this needs to be mod depending on which model and selection criteria you want
@@ -543,23 +544,37 @@ dev.off()
 dfx = envir_data2#%>%select(-c(HCIpjuv, HCIlarv, HCI2larv, HCI2pjuv)) 
 dfx = na.omit(dfx) # na's mess up the cor function
 cor_xy = cor(dfx)
+uncorr_sorted <- uncorr%>%
+  mutate(key=paste0(pmin(xvar, yvar), pmax(xvar,yvar), sep=""))%>%
+  distinct(key, .keep_all=TRUE)%>%
+  select(-key)
+#unique(lapply(uncorr, function(x) sort(x)))
+r<-data.frame()
+#r <- rbind(c("DDpre", "MLDpjuv","DDpre","MLDpjuv"))
+for(i in 1:length(uncorr_sorted$xvar)){
+  temp<-c(uncorr_sorted$xvar[i], uncorr_sorted$yvar[i], uncorr_sorted$xvar[i], uncorr_sorted$yvar[i])
+  r<-rbind(r, temp) 
+}
 
 graphics.off()
 png( paste0("Figures/No_SMURF_Sensitivity/FigureA1vb.png"),
-     units = 'in', res=300, width = 5, height=5)
+     units = 'in', res=300, width = 8, height=8)
 # plot command
-#corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.3, tl.cex = 0.5)
+#r <- rbind(r, c("DDpre", "PPpjuv","DDegg","PPpjuv"))
+#corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.5, tl.cex = 0.5)
 
-corrplot::corrplot.mixed(cor_xy,method='ellipse',  type='lower', tl.cex = 0.5)#%>% corrRect(namesMat = r)
+corrplot::corrplot(cor_xy, method='ellipse',  type='lower', tl.cex = 0.75)%>% 
+  corrRect(namesMat = r)
 
 dev.off()
 
 pdf( paste0("Figures/Figure4.pdf"),
-    width = 5, height=5)
+    width = 8, height=8)
 # plot command
 #corrplot::corrplot(cor_xy, method="number", type='lower', number.cex=0.3, tl.cex = 0.5)
 
-corrplot::corrplot(cor_xy,method='ellipse',  type='lower', tl.cex = 0.5)
+corrplot::corrplot(cor_xy, method='ellipse',  type='lower', tl.cex = 0.75)%>% 
+  corrRect(namesMat = r)
 dev.off()
 
 m2<-gam
